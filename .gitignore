@@ -1,0 +1,6 @@
+.python-version
+han.egg-info
+*~
+\#*
+venv
+__pycache__
