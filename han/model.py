@@ -1,5 +1,6 @@
 """Define Hierarchical attention network."""
 import torch.nn as nn
+from . import vocabulary as v
 
 
 class HierarchicalAttentionNetwork(nn.Module):
@@ -14,8 +15,15 @@ class HierarchicalAttentionNetwork(nn.Module):
 
         """
         super(HierarchicalAttentionNetwork, self).__init__()
+        self.vocabulary = v.Vocabulary()
         self.embedding = nn.Embedding(
             embedding_dim=embedding_dim,
             num_embeddings=num_embeddings,
             sparse=True,
         )
+
+        initrange = 0.5
+        self.embedding.weight.data.uniform_(-initrange, initrange)
+
+    def forward(self, text):
+        """"""

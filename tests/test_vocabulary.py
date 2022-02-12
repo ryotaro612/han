@@ -1,12 +1,12 @@
 import unittest
 import torch
 import torch.testing as te
-import han.embedding as e
+import han.vocabulary as v
 
 
 class Test(unittest.TestCase):
     def test(self):
-        sut = e.Vocabulary()
+        sut = v.Vocabulary()
         sut.build(["You can now install TorchText using pip!"])
 
         res = sut.forward(["You can not", "install using"])
