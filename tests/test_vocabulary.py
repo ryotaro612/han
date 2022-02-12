@@ -20,3 +20,9 @@ class Test(unittest.TestCase):
                 ]
             ),
         )
+
+    def test_len(self):
+        sut = v.Vocabulary()
+        sut.build(["You can now install TorchText using pip!"])
+        ans = len(sut.tokenizer("You can now install TorchText using pip!"))
+        self.assertEqual(ans, len(sut))

@@ -21,7 +21,12 @@ class Vocabulary:
         self.vocab.set_default_index(self.pad_id)
 
     def forward(self, texts: t.Iterator[str]) -> torch.Tensor:
-        """Construct the word index matrix."""
+        """Construct the word index matrix.
+
+        The width of the matrix depends on
+        the length of the longest text.
+
+        """
         vectors = [
             [self.vocab[word] for word in self.tokenizer(text)]
             for text in texts
@@ -39,3 +44,7 @@ class Vocabulary:
     def __getitem__(self, key: str) -> int:
         """Look up a word."""
         return self.vocab[key]
+
+    def __len__(self) -> int:
+        """Return the number of the words of the trained vocabulary."""
+        return len(self.vocab)
