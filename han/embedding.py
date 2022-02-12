@@ -18,10 +18,12 @@ class Vocabulary:
         self.vocab: v.Vocab = v.build_vocab_from_iterator(
             (self.tokenizer(text) for text in texts)
         )
-        self.vocab.set_default_index(self.get_unknown_id())
         unknown = "<unk>"
         if unknown not in self.vocab:
-            self.vocab.insert_token(unknown, self.get_unknown_id())
+            self.vocab.set_default_index(self.unknown_id)
+            self.vocab.insert_token(unknown, self.unknown_id)
+        else:
+            self.vocab.set_default_index(self[unknown])
         self.vocab.append_token(self.pad)
 
     def forward(self, texts: t.Iterator[str]) -> torch.Tensor:
@@ -34,21 +36,22 @@ class Vocabulary:
         for vector in vectors:
             max_len = max(len(vector), max_len)
 
-        pad_indice = self.get_pad_id()
         for index in range(len(vectors)):
             vectors[index] = vectors[index] + [
-                pad_indice for _ in range(max_len - len(vectors[index]))
+                self.pad_id for _ in range(max_len - len(vectors[index]))
             ]
         return torch.Tensor(vectors)
 
-    def get_pad_id(self):
+    @property
+    def pad_id(self):
         """Return pad id."""
         return self.vocab[self.pad]
 
-    def get_unknown_id(self):
+    @property
+    def unknown_id(self):
         """Return unknown id."""
         return 0
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> int:
         """Look up a word."""
         return self.vocab[key]
