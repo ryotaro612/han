@@ -9,13 +9,13 @@ class Test(unittest.TestCase):
         sut = v.Vocabulary()
         sut.build(["You can now install TorchText using pip!"])
 
-        res = sut.forward(["You can not", "install using"])
+        res = sut.forward(["You not can", "install using"])
 
         te.assert_close(
             res,
             torch.Tensor(
                 [
-                    [sut["you"], sut["can"], sut.unknown_id],
+                    [sut["you"], sut.pad_id, sut["can"]],
                     [sut["install"], sut["using"], sut.pad_id],
                 ]
             ),
