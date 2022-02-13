@@ -2,44 +2,35 @@
 import typing as t
 import torch
 import torchtext.vocab as v
-from . import token as to
+import torch.nn.utils.rnn as r
 
 
 class Vocabulary:
     """Convet texts to an index matrix."""
 
-    def __init__(self):
-        """Take no arguments."""
-        self.tokenizer: t.Tokenizer = to.Tokenizer()
-        self.pad_id = 0
+    def __init__(self, vocab: v.Vocab, pad_id: int = 0):
+        """Take a learned vocabulary."""
+        self.vocab = vocab
+        self.pad_id = pad_id
 
-    def build(self, texts: t.Iterator[str]):
-        """Build vocaburary."""
-        self.vocab: v.Vocab = v.build_vocab_from_iterator(
-            (self.tokenizer(text) for text in texts)
-        )
-        self.vocab.set_default_index(self.pad_id)
-
-    def forward(self, texts: t.Iterator[str]) -> torch.Tensor:
+    def create_matrix(
+        self, sentences: t.Iterator[t.Iterator[str]]
+    ) -> torch.Tensor:
         """Construct the word index matrix.
 
-        The width of the matrix depends on
-        the length of the longest text.
+        Return the matrix with (L, B) shape.
+        L is the the length of the longest sentece.
+        B is the batch size, and same as len(sentences).
 
         """
-        vectors = [
-            [self.vocab[word] for word in self.tokenizer(text)]
-            for text in texts
-        ]
-        max_len = 0
-        for vector in vectors:
-            max_len = max(len(vector), max_len)
-
-        for index in range(len(vectors)):
-            vectors[index] += [
-                self.pad_id for _ in range(max_len - len(vectors[index]))
-            ]
-        return torch.Tensor(vectors)
+        return r.pad_sequence(
+            [
+                torch.Tensor([self.vocab[word] for word in words])
+                for words in sentences
+            ],
+            batch_first=False,
+            padding_value=self.pad_id,
+        )
 
     def __getitem__(self, key: str) -> int:
         """Look up a word."""
@@ -47,8 +38,15 @@ class Vocabulary:
 
     def __len__(self) -> int:
         """Return the number of the words of the trained vocabulary."""
-        if hasattr(self, "vocab"):
-            return len(self.vocab)
-        raise RuntimeError(
-            "This instance did not learn vocabulary. call build before len."
-        )
+        return len(self.vocab)
+
+
+def build_vocabulary(
+    sentences: t.Iterator[t.Iterator[str]], pad_id: int = 0
+) -> Vocabulary:
+    """Build a vocabulary."""
+    vocab: v.Vocab = v.build_vocab_from_iterator(
+        (word for words in sentences for word in words)
+    )
+    vocab.set_default_index(pad_id)
+    return Vocabulary(vocab, pad_id)

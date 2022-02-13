@@ -4,25 +4,15 @@ import torch.testing as te
 import han.vocabulary as v
 
 
-class Test(unittest.TestCase):
+class VocabularyTestCase(unittest.TestCase):
     def test(self):
-        sut = v.Vocabulary()
-        sut.build(["You can now install TorchText using pip!"])
-
-        res = sut.forward(["You not can", "install using"])
+        pad_id = 0
+        sut = v.build_vocabulary([["a"], ["b", "c"]], pad_id)
+        res = sut.create_matrix([["a", "b"], ["d", "c", "b"]])
 
         te.assert_close(
             res,
             torch.Tensor(
-                [
-                    [sut["you"], sut.pad_id, sut["can"]],
-                    [sut["install"], sut["using"], sut.pad_id],
-                ]
+                [[sut["a"], pad_id], [sut["b"], sut["c"]], [pad_id, sut["b"]]]
             ),
         )
-
-    def test_len(self):
-        sut = v.Vocabulary()
-        sut.build(["You can now install TorchText using pip!"])
-        ans = len(sut.tokenizer("You can now install TorchText using pip!"))
-        self.assertEqual(ans, len(sut))

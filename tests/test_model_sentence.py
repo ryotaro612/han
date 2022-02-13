@@ -1,5 +1,6 @@
 import unittest
 import os
+import torchtext.datasets as d
 from . import marker
 
 
@@ -7,4 +8,4 @@ from . import marker
 class TestCase(unittest.TestCase):
     def test(self):
 
-        assert False
+        train, test = d.AG_NEWS()
