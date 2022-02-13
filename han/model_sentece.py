@@ -44,11 +44,16 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         self.mlp = nn.Linear(gru_hidden_size * 2, mlp_output_size)
         self.context_weights = nn.Parameter(torch.Tensor(mlp_output_size, 1))
 
-    def forward(self, x: torch.Tensor) -> t.Tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, x: torch.Tensor, lengths: list[int]
+    ) -> t.Tuple[torch.Tensor, torch.Tensor]:
         """Calculate sentence vectors, and attentions.
 
         x is a word index matrix. The shape is
         (batch size, number of the words in the longest sentence)
+
+        Each item of lengths is the number of the words in each
+        sentence before padding.
 
         """
         # x.shape is (longest length, batch size, embedding dim)
@@ -60,6 +65,7 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         u = self.mul_context_vector(u, self.context_weights)
         alpha = self.calc_softmax(u)
         del u
+        # TODO refactor sentence vector
         return self.calc_sentence_vector(alpha, h), alpha
 
     def pack_embeddings(

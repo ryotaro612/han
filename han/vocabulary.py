@@ -15,7 +15,7 @@ class Vocabulary:
 
     def create_matrix(
         self, sentences: t.Iterator[t.Iterator[str]]
-    ) -> torch.Tensor:
+    ) -> t.Tuple[torch.Tensor, list[int]]:
         """Construct the word index matrix.
 
         Return the matrix with (L, B) shape.
@@ -23,13 +23,17 @@ class Vocabulary:
         B is the batch size, and same as len(sentences).
 
         """
-        return r.pad_sequence(
-            [
-                torch.Tensor([self.vocab[word] for word in words])
-                for words in sentences
-            ],
-            batch_first=False,
-            padding_value=self.pad_id,
+        lengths: list[int] = [len(sentence) for sentence in sentences]
+        return (
+            r.pad_sequence(
+                [
+                    torch.Tensor([self.vocab[word] for word in words])
+                    for words in sentences
+                ],
+                batch_first=False,
+                padding_value=self.pad_id,
+            ),
+            lengths,
         )
 
     def __getitem__(self, key: str) -> int:
