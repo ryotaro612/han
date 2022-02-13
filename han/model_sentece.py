@@ -65,7 +65,6 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         u = self.mul_context_vector(u, self.context_weights)
         alpha = self.calc_softmax(u)
         del u
-        # TODO refactor sentence vector
         return self.calc_sentence_vector(alpha, h), alpha
 
     def pack_embeddings(
@@ -110,12 +109,4 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         (the number of words or sentences, batch size, dimention).
 
         """
-        batch = []
-        for word_indice in range(alpha.shape[0]):
-            per_word = torch.transpose(
-                torch.unsqueeze(alpha[word_indice, :], 0), 1, 0
-            ).expand_as(h[word_indice, :, :])
-            batch.append(
-                torch.unsqueeze(torch.mul(h[word_indice, :, :], per_word), 1)
-            )
-        return torch.sum(torch.cat(batch, 1), 1)
+        return torch.sum(torch.unsqueeze(alpha, 2).expand_as(h), 0)

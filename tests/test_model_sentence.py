@@ -2,7 +2,6 @@ import unittest
 import torch
 import torch.testing as te
 import torch.utils.data as da
-import torch.nn.utils.rnn as r
 import han.vocabulary as v
 from . import marker
 from . import ag_news as ag
@@ -34,7 +33,7 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
             torch.Tensor([1]),
         )
 
-    def test_calc_embedding(self):
+    def test_calc_setence_vector(self):
         alpha = torch.Tensor([[1, 2, 3], [4, 5, 6]])
         self.assertEqual(torch.Size([2, 3]), alpha.shape)
         h = torch.Tensor(
