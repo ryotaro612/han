@@ -1,6 +1,5 @@
 import unittest
 import torch
-import torch.nn as nn
 import torch.testing as te
 from han import model as m
 import han.vocabulary as v
@@ -49,20 +48,3 @@ class TestHierarchicalAttentionNetwork(unittest.TestCase):
         te.assert_close(
             res, torch.Tensor([[5, 5, 5, 5], [7, 7, 7, 7], [9, 9, 9, 9]])
         )
-        batch = []
-        for word_indice in range(alpha.shape[0]):
-            print(alpha[word_indice, :])
-            print(h[word_indice, :, :])
-            a = torch.transpose(
-                torch.unsqueeze(alpha[word_indice, :], 0), 1, 0
-            ).expand_as(h[word_indice, :, :])
-            print(a)
-            print(torch.mul(h[word_indice, :, :], a))
-            batch.append(
-                torch.unsqueeze(torch.mul(h[word_indice, :, :], a), 1)
-            )
-            print("-")
-        print(batch[0].shape)
-        print(torch.cat(batch, 1).shape)
-        print(torch.sum(torch.cat(batch, 1), 1))
-        assert False

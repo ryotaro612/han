@@ -91,14 +91,12 @@ class HierarchicalAttentionNetwork(nn.Module):
         (the number of words or sentences, batch size, dimention).
 
         """
-        num_words = alpha.shape[0]
         batch = []
-        for item_indice in range(alpha.shape[1]):
-            temp = []
-            for word_indice in range(num_words):
-                temp.append(
-                    alpha[word_indice][item_indice]
-                    * h[word_indice][item_indice]
-                )
-            batch.append((torch.sum(torch.vstack(temp), 0)))
-        return torch.vstack(batch)
+        for word_indice in range(alpha.shape[0]):
+            per_word = torch.transpose(
+                torch.unsqueeze(alpha[word_indice, :], 0), 1, 0
+            ).expand_as(h[word_indice, :, :])
+            batch.append(
+                torch.unsqueeze(torch.mul(h[word_indice, :, :], per_word), 1)
+            )
+        return torch.sum(torch.cat(batch, 1), 1)
