@@ -2,6 +2,7 @@ import unittest
 import torch
 import torch.testing as te
 import torch.utils.data as da
+import torch.nn.utils.rnn as r
 import han.vocabulary as v
 from . import marker
 from . import ag_news as ag
@@ -49,6 +50,35 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
             res, torch.Tensor([[5, 5, 5, 5], [7, 7, 7, 7], [9, 9, 9, 9]])
         )
 
+    def test_pack_embeddings(self):
+        a = torch.Tensor(
+            [
+                [[1, 1], [2, 2], [8, 8]],
+                [[4, 4], [5, 5], [0, 0]],
+                [[0, 0], [7, 7], [0, 0]],
+            ]
+        )
+        self.assertEquals(torch.Size([3, 3, 2]), a.shape)
+        sut = m.HierarchicalAttentionSentenceNetwork(10, 0)
+        res = sut.pack_embeddings(
+            a,
+            [2, 3, 1],
+        )
+
+        te.assert_allclose(
+            res.data,
+            torch.Tensor(
+                [
+                    [2.0, 2.0],
+                    [1.0, 1.0],
+                    [8.0, 8.0],
+                    [5.0, 5.0],
+                    [4.0, 4.0],
+                    [7.0, 7.0],
+                ]
+            ),
+        )
+
 
 @unittest.skipUnless(marker.run_integration_tests, "Take many time.")
 class IntegrationTestCase(unittest.TestCase):
@@ -56,7 +86,8 @@ class IntegrationTestCase(unittest.TestCase):
         train = ag.get_train()
         vocabulary: v.Vocabulary = ag.build_ag_news_vocabulary(train)
         train_data_loader: da.DataLoader = da.DataLoader(train, batch_size=10)
-        raise NotImplementedError()
+        for batch, (x, y) in enumerate(train_data_loader):
+            raise NotImplementedError()
 
 
 if __name__ == "__main__":

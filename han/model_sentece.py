@@ -2,6 +2,7 @@
 import typing as t
 import torch
 import torch.nn as nn
+import torch.nn.utils.rnn as r
 
 
 class HierarchicalAttentionSentenceNetwork(nn.Module):
@@ -50,7 +51,9 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         (batch size, number of the words in the longest sentence)
 
         """
+        # x.shape is (longest length, batch size, embedding dim)
         x: torch.Tensor = self.embedding(x)
+        x: r.PackedSequence = self.pack_embedddings(x)
         h: torch.Tensor = self.gru(x)[0]
         del x
         u: torch.Tensor = torch.nn.Tanh(self.mlp(h))
@@ -58,6 +61,17 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         alpha = self.calc_softmax(u)
         del u
         return self.calc_sentence_vector(alpha, h), alpha
+
+    def pack_embeddings(
+        self, x: torch.Tensor, lengths: list[int]
+    ) -> r.PackedSequence:
+        """Pack padded and embedded words.
+
+        The shape of x is
+        (the longest length of the sentences, batch size, embedding dim).
+
+        """
+        return r.pack_padded_sequence(x, lengths, enforce_sorted=False)
 
     def mul_context_vector(self, u: torch.Tensor, context_param: torch.Tensor):
         """Calulate arguments for softmax.
