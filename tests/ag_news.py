@@ -1,9 +1,9 @@
 """Preprocessed AG NEWS dataset."""
 import typing as t
 import torchtext.datasets as d
-import torchtext.vocab as v
 import torch.utils.data as da
 import torchtext.data as td
+import han.vocabulary as v
 
 
 class AGNewsDataset(da.Dataset):
@@ -42,3 +42,8 @@ def get_train(limit: int = 120000) -> AGNewsDataset:
         tokens = tokenizer(text)
         items.append((label, tokens))
     return AGNewsDataset(items)
+
+
+def build_ag_news_vocabulary(agnews: AGNewsDataset) -> v.Vocabulary:
+    """Learn vocabulary."""
+    return v.build_vocabulary((tokens for label, tokens in agnews))
