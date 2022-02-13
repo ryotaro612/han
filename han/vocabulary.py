@@ -47,4 +47,8 @@ class Vocabulary:
 
     def __len__(self) -> int:
         """Return the number of the words of the trained vocabulary."""
-        return len(self.vocab)
+        if hasattr(self, "vocab"):
+            return len(self.vocab)
+        raise RuntimeError(
+            "This instance did not learn vocabulary. call build before len."
+        )

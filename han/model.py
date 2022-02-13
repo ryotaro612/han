@@ -13,6 +13,7 @@ class HierarchicalAttentionNetwork(nn.Module):
         vocabulary: v.Vocabulary,
         embedding_dim: int = 200,
         gru_hidden_size: int = 50,
+        mlp_output_size: int = 100,
     ):
         """Take hyper parameters.
 
@@ -32,20 +33,72 @@ class HierarchicalAttentionNetwork(nn.Module):
             padding_idx=self.vocabulary.pad_id,
             sparse=True,
         )
-        self.word_encoder_rnn = nn.GRU(
-            input_size=self.embedding_dim,
+        self.word_gru = nn.GRU(
+            input_size=embedding_dim,
             hidden_size=gru_hidden_size,
             bidirectional=True,
         )
         self.gru_hidden_size = gru_hidden_size
+        self.word_mlp = nn.Linear(gru_hidden_size * 2, mlp_output_size)
+        self.word_context_weight = nn.Parameter(
+            torch.Tensor(mlp_output_size, 1)
+        )
 
     def forward(self, texts: t.Iterable[str]):
         """Pass dataset to the layers."""
         x: torch.Tensor = self.vocabulary.forward(texts)
         x: torch.Tensor = self.embedding(x)
-        # the dimenstion of the below matrix is
-        # (the max length of the texts, batch size, 2 * self.gru_hidden_size)
-        x: torch.Tensor = self.word_encoder_rnn(x)
-        x: torch.Tensor = torch.nn.Tanh(x)
-
+        # the dimenstion of the below x is
+        # (  the max length of a text in texts
+        #  , batch size
+        #  , 2 * self.gru_hidden_size)
+        x, h = self.word_gru(x)
+        u: torch.Tensor = self.word_mlp(x)
+        u: torch.Tensor = torch.nn.Tanh(u)
+        u = self.mul_context_vector(u, self.word_context_weight)
+        u = self.calc_softmax(u)
+        u = self.calc_word_doc_vector(u, x)
         # (L, N, D * H_{out})(L,N,D∗H ​)
+
+    def mul_context_vector(self, u: torch.Tensor, context_param: torch.Tensor):
+        """Calulate arguments for softmax.
+
+        The shape of u is
+        (the number of words in a sentence, batch size, dimention of word)
+        The number of words contains padding.
+        The shape of context_param is (dimention of word).
+        Return (the number of words in a sentence, batch size).
+
+        """
+        return torch.matmul(u, context_param)
+
+    def calc_softmax(self, x: torch.Tensor):
+        """Calculate softmax.
+
+        The shape of x is (the number of words in a sentence, word dimension).
+        Return the tensor with (the number of words) shape.
+
+        """
+        return nn.Softmax(dim=0)(x)
+
+    def calc_word_doc_vector(self, alpha: torch.Tensor, h: torch.Tensor):
+        """Calculate word or doc vector.
+
+        The shape of alpha is
+        (the number of words or senteces, batch size).
+
+        The shape of h is
+        (the number of words or sentences, batch size, dimention).
+
+        """
+        num_words = alpha.shape[0]
+        batch = []
+        for item_indice in range(alpha.shape[1]):
+            temp = []
+            for word_indice in range(num_words):
+                temp.append(
+                    alpha[word_indice][item_indice]
+                    * h[word_indice][item_indice]
+                )
+            batch.append((torch.sum(torch.vstack(temp), 0)))
+        return torch.vstack(batch)
