@@ -9,8 +9,12 @@ import han.vocabulary as v
 class AGNewsDataset(da.Dataset):
     """A wrapper of ag news.
 
-    The datasource is
+    Each item is a tuple. The first item is a label.
+    The second one a list of tokens. The type of the tokens are str.
+
+    The source is
     https://pytorch.org/text/stable/datasets.html#torchtext.datasets.AG_NEWS
+
     """
 
     def __init__(self, raw_dataset: t.Sequence[t.Tuple[int, list[str]]]):
@@ -25,7 +29,7 @@ class AGNewsDataset(da.Dataset):
         """Get elements."""
         if type(i) == int:
             return self.raw_dataset[i]
-        return self.raw_dataset.__getitem__(i)
+        return AGNewsDataset(self.raw_dataset.__getitem__(i))
 
 
 def get_train(limit: int = 120000) -> AGNewsDataset:
