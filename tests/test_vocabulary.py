@@ -9,7 +9,7 @@ class VocabularyTestCase(unittest.TestCase):
         pad_id = 0
         sut = v.build_vocabulary([["a"], ["b", "c"]], pad_id)
         res, lengths = sut.create_matrix([["a", "b"], ["d", "c", "b"]])
-        self.assertEquals([2, 3], lengths)
+        self.assertEqual([2, 3], lengths)
         te.assert_close(
             res,
             torch.Tensor(

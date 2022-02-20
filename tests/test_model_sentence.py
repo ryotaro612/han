@@ -57,7 +57,7 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
                 [[0, 0], [7, 7], [0, 0]],
             ]
         )
-        self.assertEquals(torch.Size([3, 3, 2]), a.shape)
+        self.assertEqual(torch.Size([3, 3, 2]), a.shape)
         sut = m.HierarchicalAttentionSentenceNetwork(10, 0)
         res = sut.pack_embeddings(
             a,
