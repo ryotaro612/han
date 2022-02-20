@@ -6,12 +6,16 @@ import torch.nn.utils.rnn as r
 
 
 class Vocabulary:
-    """Convet texts to an index matrix."""
+    """Convet texts to an index matrix.
 
-    def __init__(self, vocab: v.Vocab, pad_id: int = 0):
+    `pad_index` is the padding index.
+
+    """
+
+    def __init__(self, vocab: v.Vocab, pad_index: int = 0):
         """Take a learned vocabulary."""
         self.vocab = vocab
-        self.pad_id = pad_id
+        self.pad_index = pad_index
 
     def create_matrix(
         self, sentences: t.Iterator[t.Iterator[str]]
@@ -31,7 +35,7 @@ class Vocabulary:
                     for words in sentences
                 ],
                 batch_first=False,
-                padding_value=self.pad_id,
+                padding_value=self.pad_index,
             ),
             lengths,
         )
@@ -46,11 +50,11 @@ class Vocabulary:
 
 
 def build_vocabulary(
-    sentences: t.Iterator[t.Iterator[str]], pad_id: int = 0
+    sentences: t.Iterator[t.Iterator[str]], pad_index: int = 0
 ) -> Vocabulary:
     """Build a vocabulary."""
     vocab: v.Vocab = v.build_vocab_from_iterator(
         (word for words in sentences for word in words)
     )
-    vocab.set_default_index(pad_id)
-    return Vocabulary(vocab, pad_id)
+    vocab.set_default_index(pad_index)
+    return Vocabulary(vocab, pad_index)

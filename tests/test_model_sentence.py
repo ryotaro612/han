@@ -79,13 +79,15 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
         )
 
 
-@unittest.skipUnless(marker.run_integration_tests, "Take many time.")
+@unittest.skipUnless(marker.run_integration_tests, marker.skip_reason)
 class IntegrationTestCase(unittest.TestCase):
     def test(self):
         train: ag.AGNewsDataset = ag.get_train()
         vocabulary: v.Vocabulary = ag.build_ag_news_vocabulary(train)
         train_data_loader: da.DataLoader = da.DataLoader(train, batch_size=10)
+        # model = m.HierarchicalAttentionSentenceNetwork(len(vocabulary), )
         for batch, (x, y) in enumerate(train_data_loader):
+
             raise NotImplementedError()
 
 
