@@ -48,7 +48,7 @@ class AgNewsCollateFn:
 
     def __call__(
         self, batch: list[t.Tuple[int, list[str]]]
-    ) -> t.Tuple[torch.Tensor, list[int], list[int]]:
+    ) -> t.Tuple[torch.Tensor, list[int], torch.Tensor]:
         """Return a triple.
 
         The first item of a returned values is a tensor of the word
@@ -56,7 +56,9 @@ class AgNewsCollateFn:
         sentences. The third one is the labels.
 
         """
-        labels: list[int] = [item[0] for item in batch]
+        labels: torch.Tensor = torch.Tensor([item[0] for item in batch]).to(
+            torch.long
+        )
         sentences: list[list[str]] = [item[1] for item in batch]
         word_tensor, lengths = self.vocabulary.forward(sentences)
         return word_tensor, lengths, labels
@@ -97,8 +99,8 @@ def create_dataloader(
     This function returns a tuple. The first item is the DataLoader,
     and the second one is the size of the vocabulary.
 
-    The DataLoader emits a tuple for a batch.
-    They are the tensor of a word index, the lengths of the sentences, the labels.
+    The DataLoader emits a tuple for a batch.  They are the tensor of
+    a word index, the lengths of the sentences, the labels.
 
     """
     dataset: da.Dataset = get_train(limit)

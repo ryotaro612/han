@@ -113,3 +113,75 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
 
         """
         return torch.sum(torch.mul(alpha.expand_as(h), h), 0)
+
+
+class HierarchicalAttentionSentenceNetworkClassifier(nn.Module):
+    """Use `HierachicalAttentionSentenceNetwork' for a multi class problem."""
+
+    def __init__(
+        self,
+        vocabulary_size: int,
+        padding_idx: int,
+        mlp_output_size: int,
+        num_of_classes: int,
+    ):
+        """`num_of_classes' is the number of the classes."""
+        super(HierarchicalAttentionSentenceNetworkClassifier, self).__init__()
+        self.han: HierarchicalAttentionSentenceNetwork = (
+            HierarchicalAttentionSentenceNetwork(
+                vocabulary_size,
+                padding_idx=padding_idx,
+                mlp_output_size=mlp_output_size,
+            )
+        )
+        self.linear = nn.Linear(mlp_output_size, num_of_classes)
+
+    def forward(self, x: torch.Tensor, lengths: list[int]) -> torch.Tensor:
+        """Calculate sentence vectors, and attentions.
+
+        x is a word index matrix. The shape is
+        (batch size, number of the words in the longest sentence)
+
+        Each item of lengths is the number of the words in each
+        sentence before padding.
+
+        """
+        x, _ = self.han(x, lengths)
+        return self.linear(x)
+
+
+class DebugModel(nn.Module):
+    """A simple model for debugging."""
+
+    def __init__(
+        self,
+        vocabulary_size: int,
+        padding_idx: int,
+        embedding_dim: int,
+        gru_hidden_size: int,
+        num_of_classes: int,
+    ):
+        """Take parameters to create inner layers."""
+        super(DebugModel, self).__init__()
+        self.embedding = nn.Embedding(
+            num_embeddings=vocabulary_size,
+            embedding_dim=embedding_dim,
+            padding_idx=padding_idx,
+            sparse=True,
+        )
+        self.gru = nn.GRU(
+            input_size=embedding_dim,
+            hidden_size=gru_hidden_size,
+            bidirectional=True,
+        )
+        self.linear = nn.Linear(gru_hidden_size * 2, num_of_classes)
+
+    def forward(self, x: torch.Tensor, lengths: list[int]):
+        """Forward."""
+        x: torch.Tensor = self.embedding(x)
+        x: r.PackedSequence = r.pack_padded_sequence(
+            x, lengths, enforce_sorted=False
+        )
+        _, h_n = self.gru(x)
+        x = torch.cat([h_n[0, :, :], h_n[1, :, :]], 1)
+        return self.linear(x)

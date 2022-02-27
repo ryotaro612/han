@@ -88,31 +88,37 @@ class IntegrationTestCase(unittest.TestCase):
         ----------
         https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html#full-implementation
         https://developers.google.com/machine-learning/guides/text-classification/step-4
+
         """
         pad_index = 0
         dataloader, vocabulary_size = ag.create_dataloader(
-            batch_size=10, pad_index=pad_index
+            batch_size=100, pad_index=pad_index
         )
         # the size of a batch
         size = len(dataloader)
         mlp_output_size = 100
-        model = m.HierarchicalAttentionSentenceNetwork(
-            vocabulary_size,
+        # model = m.HierarchicalAttentionSentenceNetworkClassifier(
+        #     vocabulary_size,
+        #     padding_idx=pad_index,
+        #     mlp_output_size=mlp_output_size,
+        #     num_of_classes=4,
+        # )
+        model = m.DebugModel(
+            vocabulary_size=vocabulary_size,
             padding_idx=pad_index,
-            mlp_output_size=mlp_output_size,
+            embedding_dim=200,
+            gru_hidden_size=50,
+            num_of_classes=4,
         )
         model.train()
         loss_fn = nn.CrossEntropyLoss()
-        num_of_classes = 4
-        mlp = nn.Linear(mlp_output_size, num_of_classes)
-        mlp.train()
-        optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+        optimizer = torch.optim.SGD(model.parameters(), lr=1e-6)
         for batch_index, (word_index, sentence_lengths, labels) in enumerate(
             dataloader
         ):
             optimizer.zero_grad()
-            pred, _ = model(word_index, sentence_lengths)
-            loss = loss_fn(mlp(pred), torch.Tensor(labels).to(torch.long))
+            pred = model(word_index, sentence_lengths)
+            loss = loss_fn(pred, labels)
             loss.backward()
             optimizer.step()
             if batch_index % 100 == 0:
