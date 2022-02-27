@@ -22,12 +22,15 @@ class Vocabulary:
     ) -> t.Tuple[torch.Tensor, list[int]]:
         """Construct the word index matrix.
 
-        Return the matrix with (L, B) shape.
-        L is the the length of the longest sentece.
+        Return a tuple.
+        The first element is the matrix with (L, B) shape.
+        L is the the length of the longest sentence.
         B is the batch size, and same as len(sentences).
+        The second item is the lengths of the sentences.
 
         """
         lengths: list[int] = [len(sentence) for sentence in sentences]
+        # pad sequence returns a tensor.
         return (
             r.pad_sequence(
                 [

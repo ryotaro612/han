@@ -1,10 +1,11 @@
 import unittest
 import torch
+import torch.nn as nn
 import torch.testing as te
 import torch.utils.data as da
 import han.vocabulary as v
-from . import marker
-from . import ag_news as ag
+import marker
+import ag_news as ag
 import han.model_sentece as m
 
 
@@ -82,13 +83,33 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
 @unittest.skipUnless(marker.run_integration_tests, marker.skip_reason)
 class IntegrationTestCase(unittest.TestCase):
     def test(self):
+        """
+        References
+        ----------
+        https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html#full-implementation
+        https://developers.google.com/machine-learning/guides/text-classification/step-4
+        """
         train: ag.AGNewsDataset = ag.get_train()
+        size = len(train)
         vocabulary: v.Vocabulary = ag.build_ag_news_vocabulary(train)
         train_data_loader: da.DataLoader = da.DataLoader(train, batch_size=10)
-        # model = m.HierarchicalAttentionSentenceNetwork(len(vocabulary), )
-        for batch, (x, y) in enumerate(train_data_loader):
-
-            raise NotImplementedError()
+        model = m.HierarchicalAttentionSentenceNetwork(
+            len(vocabulary), vocabulary.pad_index
+        )
+        loss_fn = nn.CrossEntropyLoss()
+        optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+        for batch_index, batch in enumerate(train_data_loader):
+            labels: list[int] = [item[0] for item in batch]
+            tokens: list[list[str]] = [item[1] for item in batch]
+            word_tensor, lengths = vocabulary.create_matrix(tokens)
+            pred = model(word_tensor, lengths)
+            loss = loss_fn(pred, labels)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            if batch_index % 100 == 0:
+                loss, current = loss.item(), batch_index % len(labels)
+                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
 
 if __name__ == "__main__":

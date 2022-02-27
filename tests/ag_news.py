@@ -18,7 +18,13 @@ class AGNewsDataset(da.Dataset):
     """
 
     def __init__(self, raw_dataset: t.Sequence[t.Tuple[int, list[str]]]):
-        """Take raw ag news dataset."""
+        """Take labels and tokens of AG news.
+
+        Each item is a tuple.
+        The first item is a label of the second one.
+        The label is between 0 and 3.
+
+        """
         self.raw_dataset = raw_dataset
 
     def __len__(self) -> int:
@@ -44,7 +50,7 @@ def get_train(limit: int = 120000) -> AGNewsDataset:
     for _ in range(limit):
         label, text = next(train)
         tokens = tokenizer(text)
-        items.append((label, tokens))
+        items.append((label - 1, tokens))
     return AGNewsDataset(items)
 
 
