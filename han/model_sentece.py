@@ -42,6 +42,7 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
             bidirectional=True,
         )
         self.mlp = nn.Linear(gru_hidden_size * 2, mlp_output_size)
+        self.tanh = nn.Tanh()
         self.context_weights = nn.Parameter(torch.Tensor(mlp_output_size, 1))
 
     def forward(
@@ -58,10 +59,12 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         """
         # x.shape is (longest length, batch size, embedding dim)
         x: torch.Tensor = self.embedding(x)
-        x: r.PackedSequence = self.pack_embedddings(x)
+        x: r.PackedSequence = self.pack_embeddings(x, lengths)
         h: torch.Tensor = self.gru(x)[0]
         del x
-        u: torch.Tensor = torch.nn.Tanh(self.mlp(h))
+        # MLP cannot accept any packed sequences.
+        h, _ = r.pad_packed_sequence(h)
+        u: torch.Tensor = self.tanh(self.mlp(h))
         u = self.mul_context_vector(u, self.context_weights)
         alpha = self.calc_softmax(u)
         del u
@@ -109,4 +112,6 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         (the number of words or sentences, batch size, dimention).
 
         """
+        print(alpha.shape)
+        print(h.shape)
         return torch.sum(torch.unsqueeze(alpha, 2).expand_as(h), 0)
