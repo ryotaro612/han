@@ -110,9 +110,9 @@ class IntegrationTestCase(unittest.TestCase):
         for batch_index, (word_index, sentence_lengths, labels) in enumerate(
             dataloader
         ):
+            optimizer.zero_grad()
             pred, _ = model(word_index, sentence_lengths)
             loss = loss_fn(mlp(pred), torch.Tensor(labels).to(torch.long))
-            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             if batch_index % 100 == 0:
