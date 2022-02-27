@@ -89,20 +89,20 @@ class IntegrationTestCase(unittest.TestCase):
         https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html#full-implementation
         https://developers.google.com/machine-learning/guides/text-classification/step-4
         """
-        train: ag.AGNewsDataset = ag.get_train()
-        size = len(train)
-        vocabulary: v.Vocabulary = ag.build_ag_news_vocabulary(train)
-        train_data_loader: da.DataLoader = da.DataLoader(train, batch_size=10)
+        pad_index = 0
+        dataloader, vocabulary_size = ag.create_dataloader(
+            batch_size=10, pad_index=pad_index, limit=1000
+        )
+        size = len(dataloader)
         model = m.HierarchicalAttentionSentenceNetwork(
-            len(vocabulary), vocabulary.pad_index
+            vocabulary_size, padding_idx=pad_index
         )
         loss_fn = nn.CrossEntropyLoss()
         optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
-        for batch_index, batch in enumerate(train_data_loader):
-            labels: list[int] = [item[0] for item in batch]
-            tokens: list[list[str]] = [item[1] for item in batch]
-            word_tensor, lengths = vocabulary.create_matrix(tokens)
-            pred = model(word_tensor, lengths)
+        for batch_index, (word_index, sentence_lengths, labels) in enumerate(
+            dataloader
+        ):
+            pred = model(word_index, sentence_lengths)
             loss = loss_fn(pred, labels)
             optimizer.zero_grad()
             loss.backward()

@@ -14,5 +14,5 @@ class VocabularyTestCase(unittest.TestCase):
             res,
             torch.Tensor(
                 [[sut["a"], pad_id], [sut["b"], sut["c"]], [pad_id, sut["b"]]]
-            ),
+            ).to(torch.int),
         )

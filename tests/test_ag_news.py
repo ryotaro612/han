@@ -29,13 +29,3 @@ class BuildAgNewsVocabularyTestCase(unittest.TestCase):
                 self.assertGreater(word_index, -1)
             else:
                 self.assertEqual(word_index, 0)
-
-
-# class BuildAgNewsDataLoaderTestCase(unittest.TestCase):
-#     def test(self):
-#         sut = ag.create_dataloader(10, batch_size=1)
-#         for a in sut:
-#             print(a[0].shape)
-#             print(a)
-
-#         assert False

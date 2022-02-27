@@ -57,10 +57,8 @@ class AgNewsCollateFn:
 
         """
         labels: list[int] = [item[0] for item in batch]
-        tokens: list[list[str]] = [item[1] for item in batch]
-
-        word_tensor, lengths = self.vocabulary.create_matrix(tokens)
-        print(tokens, word_tensor)
+        sentences: list[list[str]] = [item[1] for item in batch]
+        word_tensor, lengths = self.vocabulary.forward(sentences)
         return word_tensor, lengths, labels
 
 
@@ -80,17 +78,31 @@ def get_train(limit: int = 120000) -> AGNewsDataset:
     return AGNewsDataset(items)
 
 
-def build_ag_news_vocabulary(agnews: AGNewsDataset) -> v.Vocabulary:
+def build_ag_news_vocabulary(
+    agnews: AGNewsDataset, pad_index: int = 0
+) -> v.Vocabulary:
     """Learn vocabulary."""
-    return v.build_vocabulary(([tokens] for label, tokens in agnews))
+    return v.build_vocabulary(
+        ([tokens] for label, tokens in agnews), pad_index=pad_index
+    )
 
 
 def create_dataloader(
-    limit: int = 120000, batch_size: t.Optional[int] = 1
-) -> da.DataLoader:
-    """Create a DataLoader that provide AGNewDataset."""
+    batch_size: t.Optional[int] = 1,
+    pad_index: int = 0,
+    limit: int = 120000,
+) -> t.Tuple[da.DataLoader, int]:
+    """Create a DataLoader that provides AGNewDataset.
+
+    This function returns a tuple. The first item is the DataLoader,
+    and the second one is the size of the vocabulary.
+
+    The DataLoader emits a tuple for a batch.
+    They are the tensor of a word index, the lengths of the sentences, the labels.
+
+    """
     dataset: da.Dataset = get_train(limit)
-    vocabulary: v.Vocabulary = build_ag_news_vocabulary(dataset)
+    vocabulary: v.Vocabulary = build_ag_news_vocabulary(dataset, pad_index)
     return da.DataLoader(
         dataset, batch_size=batch_size, collate_fn=AgNewsCollateFn(vocabulary)
-    )
+    ), len(vocabulary)

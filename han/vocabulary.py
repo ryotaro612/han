@@ -39,7 +39,7 @@ class Vocabulary:
                 ],
                 batch_first=False,
                 padding_value=self.pad_index,
-            ),
+            ).to(torch.int),
             lengths,
         )
 
