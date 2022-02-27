@@ -28,16 +28,13 @@ class Vocabulary:
         B is the batch size, and same as len(sentences).
         The second item is the lengths of the sentences.
 
-        TODO
-        Use vocab.forward
-
         """
         lengths: list[int] = [len(sentence) for sentence in sentences]
         # pad sequence returns a tensor.
         return (
             r.pad_sequence(
                 [
-                    torch.Tensor([self.vocab[word] for word in words])
+                    torch.Tensor(self.vocab.forward(words))
                     for words in sentences
                 ],
                 batch_first=False,
