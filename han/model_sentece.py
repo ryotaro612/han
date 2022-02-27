@@ -106,12 +106,10 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         """Calculate word or doc vector.
 
         The shape of alpha is
-        (the number of words or senteces, batch size).
+        (the number of words or senteces, batch size, 1).
 
         The shape of h is
         (the number of words or sentences, batch size, dimention).
 
         """
-        print(alpha.shape)
-        print(h.shape)
-        return torch.sum(torch.unsqueeze(alpha, 2).expand_as(h), 0)
+        return torch.sum(torch.mul(alpha.expand_as(h), h), 0)

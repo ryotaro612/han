@@ -2,8 +2,6 @@ import unittest
 import torch
 import torch.nn as nn
 import torch.testing as te
-import torch.utils.data as da
-import han.vocabulary as v
 import tests.marker as marker
 import tests.ag_news as ag
 import han.model_sentece as m
@@ -35,8 +33,10 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
         )
 
     def test_calc_setence_vector(self):
-        alpha = torch.Tensor([[1, 2, 3], [4, 5, 6]])
-        self.assertEqual(torch.Size([2, 3]), alpha.shape)
+        alpha = torch.Tensor(
+            [[[1], [2], [3]], [[4], [5], [6]]],
+        )
+        self.assertEqual(alpha.shape, torch.Size([2, 3, 1]))
         h = torch.Tensor(
             [
                 [[1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1]],
@@ -91,19 +91,27 @@ class IntegrationTestCase(unittest.TestCase):
         """
         pad_index = 0
         dataloader, vocabulary_size = ag.create_dataloader(
-            batch_size=10, pad_index=pad_index, limit=1000
+            batch_size=10, pad_index=pad_index
         )
+        # the size of a batch
         size = len(dataloader)
+        mlp_output_size = 100
         model = m.HierarchicalAttentionSentenceNetwork(
-            vocabulary_size, padding_idx=pad_index
+            vocabulary_size,
+            padding_idx=pad_index,
+            mlp_output_size=mlp_output_size,
         )
+        model.train()
         loss_fn = nn.CrossEntropyLoss()
+        num_of_classes = 4
+        mlp = nn.Linear(mlp_output_size, num_of_classes)
+        mlp.train()
         optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
         for batch_index, (word_index, sentence_lengths, labels) in enumerate(
             dataloader
         ):
-            pred = model(word_index, sentence_lengths)
-            loss = loss_fn(pred, labels)
+            pred, _ = model(word_index, sentence_lengths)
+            loss = loss_fn(mlp(pred), torch.Tensor(labels).to(torch.long))
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
