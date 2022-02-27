@@ -4,8 +4,8 @@ import torch.nn as nn
 import torch.testing as te
 import torch.utils.data as da
 import han.vocabulary as v
-import marker
-import ag_news as ag
+import tests.marker as marker
+import tests.ag_news as ag
 import han.model_sentece as m
 
 

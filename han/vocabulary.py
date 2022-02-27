@@ -17,7 +17,7 @@ class Vocabulary:
         self.vocab = vocab
         self.pad_index = pad_index
 
-    def create_matrix(
+    def forward(
         self, sentences: t.Iterator[t.Iterator[str]]
     ) -> t.Tuple[torch.Tensor, list[int]]:
         """Construct the word index matrix.
@@ -27,6 +27,9 @@ class Vocabulary:
         L is the the length of the longest sentence.
         B is the batch size, and same as len(sentences).
         The second item is the lengths of the sentences.
+
+        TODO
+        Use vocab.forward
 
         """
         lengths: list[int] = [len(sentence) for sentence in sentences]
@@ -53,11 +56,13 @@ class Vocabulary:
 
 
 def build_vocabulary(
-    sentences: t.Iterator[t.Iterator[str]], pad_index: int = 0
+    sentences: t.Iterator[t.Iterator[str]],
+    unknown_index: int = -1,
+    pad_index: int = 0,
 ) -> Vocabulary:
     """Build a vocabulary."""
     vocab: v.Vocab = v.build_vocab_from_iterator(
         (word for words in sentences for word in words)
     )
-    vocab.set_default_index(pad_index)
+    vocab.set_default_index(unknown_index)
     return Vocabulary(vocab, pad_index)

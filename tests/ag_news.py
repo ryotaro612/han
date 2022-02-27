@@ -1,5 +1,6 @@
 """Preprocessed AG NEWS dataset."""
 import typing as t
+import torch
 import torchtext.datasets as d
 import torch.utils.data as da
 import torchtext.data as td
@@ -38,6 +39,31 @@ class AGNewsDataset(da.Dataset):
         return AGNewsDataset(self.raw_dataset.__getitem__(i))
 
 
+class AgNewsCollateFn:
+    """A class for collate_fn."""
+
+    def __init__(self, vocabulary: v.Vocabulary):
+        """Take a learnt vocabulary."""
+        self.vocabulary = vocabulary
+
+    def __call__(
+        self, batch: list[t.Tuple[int, list[str]]]
+    ) -> t.Tuple[torch.Tensor, list[int], list[int]]:
+        """Return a triple.
+
+        The first item of a returned values is a tensor of the word
+        index matrix. The second one is the lengths of the
+        sentences. The third one is the labels.
+
+        """
+        labels: list[int] = [item[0] for item in batch]
+        tokens: list[list[str]] = [item[1] for item in batch]
+
+        word_tensor, lengths = self.vocabulary.create_matrix(tokens)
+        print(tokens, word_tensor)
+        return word_tensor, lengths, labels
+
+
 def get_train(limit: int = 120000) -> AGNewsDataset:
     """Get training dataset.
 
@@ -56,4 +82,15 @@ def get_train(limit: int = 120000) -> AGNewsDataset:
 
 def build_ag_news_vocabulary(agnews: AGNewsDataset) -> v.Vocabulary:
     """Learn vocabulary."""
-    return v.build_vocabulary((tokens for label, tokens in agnews))
+    return v.build_vocabulary(([tokens] for label, tokens in agnews))
+
+
+def create_dataloader(
+    limit: int = 120000, batch_size: t.Optional[int] = 1
+) -> da.DataLoader:
+    """Create a DataLoader that provide AGNewDataset."""
+    dataset: da.Dataset = get_train(limit)
+    vocabulary: v.Vocabulary = build_ag_news_vocabulary(dataset)
+    return da.DataLoader(
+        dataset, batch_size=batch_size, collate_fn=AgNewsCollateFn(vocabulary)
+    )
