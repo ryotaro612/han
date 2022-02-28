@@ -1,4 +1,5 @@
 """Debug."""
+import torch
 from torch.cuda import is_available
 from torchtext.datasets import AG_NEWS
 from torchtext.data.utils import get_tokenizer

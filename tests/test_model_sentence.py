@@ -97,25 +97,26 @@ class IntegrationTestCase(unittest.TestCase):
         # the size of a batch
         size = len(dataloader)
         mlp_output_size = 100
-        # model = m.HierarchicalAttentionSentenceNetworkClassifier(
-        #     vocabulary_size,
-        #     padding_idx=pad_index,
-        #     mlp_output_size=mlp_output_size,
-        #     num_of_classes=4,
-        # )
-        model = m.DebugModel(
-            vocabulary_size=vocabulary_size,
+        model = m.HierarchicalAttentionSentenceNetworkClassifier(
+            vocabulary_size,
             padding_idx=pad_index,
-            embedding_dim=200,
-            gru_hidden_size=50,
+            mlp_output_size=mlp_output_size,
             num_of_classes=4,
         )
+        # model = m.DebugModel(
+        #     vocabulary_size=vocabulary_size,
+        #     padding_idx=pad_index,
+        #     embedding_dim=200,
+        #     gru_hidden_size=50,
+        #     num_of_classes=4,
+        # )
         model.train()
         loss_fn = nn.CrossEntropyLoss()
         total_acc = 0
         total_count = 0
         last_process = 0
-        optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+        # optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adagrad(model.parameters())
         for _ in range(2):
             for batch_index, (
                 word_index,
