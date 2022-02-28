@@ -169,19 +169,20 @@ class DebugModel(nn.Module):
             padding_idx=padding_idx,
             sparse=True,
         )
-        self.gru = nn.GRU(
-            input_size=embedding_dim,
-            hidden_size=gru_hidden_size,
-            bidirectional=True,
-        )
-        self.linear = nn.Linear(gru_hidden_size * 2, num_of_classes)
+        # self.gru = nn.GRU(
+        #     input_size=embedding_dim,
+        #     hidden_size=gru_hidden_size,
+        #     bidirectional=True,
+        # )
+        self.relu = nn.ReLU()
+        self.linear = nn.Linear(embedding_dim, num_of_classes)
 
     def forward(self, x: torch.Tensor, lengths: list[int]):
         """Forward."""
         x: torch.Tensor = self.embedding(x)
-        x: r.PackedSequence = r.pack_padded_sequence(
-            x, lengths, enforce_sorted=False
-        )
-        _, h_n = self.gru(x)
-        x = torch.cat([h_n[0, :, :], h_n[1, :, :]], 1)
-        return self.linear(x)
+        # x: r.PackedSequence = r.pack_padded_sequence(
+        #     x, lengths, enforce_sorted=False
+        # )
+        # _, h_n = self.gru(x)
+        # x = torch.cat([h_n[0, :, :], h_n[1, :, :]], 1)
+        return self.relu(self.linear(torch.mean(x, dim=0)))

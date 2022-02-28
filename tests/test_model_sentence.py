@@ -92,7 +92,7 @@ class IntegrationTestCase(unittest.TestCase):
         """
         pad_index = 0
         dataloader, vocabulary_size = ag.create_dataloader(
-            batch_size=100, pad_index=pad_index
+            batch_size=10, pad_index=pad_index, limit=120000
         )
         # the size of a batch
         size = len(dataloader)
@@ -112,18 +112,34 @@ class IntegrationTestCase(unittest.TestCase):
         )
         model.train()
         loss_fn = nn.CrossEntropyLoss()
-        optimizer = torch.optim.SGD(model.parameters(), lr=1e-6)
-        for batch_index, (word_index, sentence_lengths, labels) in enumerate(
-            dataloader
-        ):
-            optimizer.zero_grad()
-            pred = model(word_index, sentence_lengths)
-            loss = loss_fn(pred, labels)
-            loss.backward()
-            optimizer.step()
-            if batch_index % 100 == 0:
-                loss, current = loss.item(), batch_index % len(labels)
-                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+        total_acc = 0
+        total_count = 0
+        last_process = 0
+        optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+        for _ in range(2):
+            for batch_index, (
+                word_index,
+                sentence_lengths,
+                labels,
+            ) in enumerate(dataloader):
+
+                pred = model(word_index, sentence_lengths)
+                print(pred.shape)
+                loss = loss_fn(pred, labels)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                total_acc += (pred.argmax(1) == labels).sum().item()
+                total_count += len(labels)
+                if last_process + 100 < total_count:
+                    last_process = total_count
+                    loss = loss.item()
+                    acc = total_acc / total_count
+                    print(
+                        f"loss: {loss:>7f} "
+                        f"acc: {acc:>7f} "
+                        f"{total_count:>5d}"
+                    )
 
 
 if __name__ == "__main__":
