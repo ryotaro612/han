@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.testing as te
 import tests.marker as marker
 import tests.ag_news as ag
-import han.model_sentece as m
+import han.model.sentence as m
 
 
 class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
