@@ -42,7 +42,7 @@ class AGNewsDataset(da.Dataset):
 
 
 class AgNewsCollateSentenceFn:
-    """Create a list of int tensors."""
+    """`__call__` emits list of tensors."""
 
     def __init__(self, vocabulary: vo.Vocab):
         """Take learned `vocabulary`."""
@@ -70,7 +70,10 @@ class AgNewsCollateSentenceFn:
 
 
 class AgNewsCollateDocumentFn:
-    """Split tokens by periods."""
+    """`__call__` emits a tuple of documents and labels.
+
+    The Documents are typed `list[list[torch.Tensor]]`.
+    """
 
     def __init__(self, vocabulary: vo.Vocab):
         """Take learned `vocabulary`."""
@@ -78,7 +81,7 @@ class AgNewsCollateDocumentFn:
 
     def __call__(
         self, batch: list[t.Tuple[int, list[str]]]
-    ) -> t.Tuple[list[list[torch.Tensor]], torch.Tensor]:
+    ) -> t.Tuple[list[list[list[int]]], torch.Tensor]:
         """Return indexed documents and labels."""
         labels: torch.Tensor = torch.Tensor([item[0] for item in batch]).to(
             torch.long
@@ -87,14 +90,14 @@ class AgNewsCollateDocumentFn:
         for text in (item[1] for item in batch):
             document = []
             sentence = []
-            for word in text:
-                sentence.append(word)
+            for word, index in zip(text, self.vocabulary.forward(text)):
+                sentence.append(index)
                 if word == ".":
-                    document.append(sentence)
+                    document.append(torch.Tensor(sentence))
                     sentence = []
 
             if len(sentence) > 0:
-                document.append(sentence)
+                document.append(torch.Tensor(sentence))
             documents.append(document)
         return documents, labels
 

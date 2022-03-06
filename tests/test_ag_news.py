@@ -45,12 +45,19 @@ class AgNewsCollateDocumentFnTestCase(unittest.TestCase):
                 (2, ["penguin", "banana", "apple", "."]),
             ]
         )
-        self.assertEqual(
+        tt.assert_close(
             documents,
             [
-                [["duck", "lion", "."], ["cat", "."]],
-                [["dog"]],
-                [["penguin", "banana", "apple", "."]],
+                [
+                    torch.Tensor(vocabulary.forward(["duck", "lion", "."])),
+                    torch.Tensor(vocabulary.forward(["cat", "."])),
+                ],
+                [torch.Tensor(vocabulary.forward(["dog"]))],
+                [
+                    torch.Tensor(
+                        vocabulary.forward(["penguin", "banana", "apple", "."])
+                    )
+                ],
             ],
         )
         tt.assert_close(labels, torch.Tensor([1, 0, 2]).to(torch.long))
