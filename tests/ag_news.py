@@ -4,6 +4,7 @@ import torch
 import torchtext.datasets as d
 import torch.utils.data as da
 import torchtext.data as td
+import torchtext.vocab as vo
 import han.vocabulary as v
 
 
@@ -81,8 +82,8 @@ def get_train(limit: int = 120000) -> AGNewsDataset:
     return AGNewsDataset(items)
 
 
-class ANewsDatasetFactory:
-    """Load and tokenize AGNews."""
+class AGNewsDatasetFactory:
+    """Load and tokenize AG_NEWS."""
 
     def get_train(self, limit: int = 120000) -> AGNewsDataset:
         """Get train data."""
@@ -91,7 +92,7 @@ class ANewsDatasetFactory:
                 f"{limit} is greater than the number of the total train data."
             )
         train = d.AG_NEWS(split="train")
-        return self._tokenize(train)
+        return self._tokenize(train, limit)
 
     def get_test(self, limit: int = 7600) -> AGNewsDataset:
         """Get train data."""
@@ -100,24 +101,22 @@ class ANewsDatasetFactory:
                 f"{limit} is greater than the number of the total test data."
             )
         test = d.AG_NEWS(split="test")
-        return self._tokenize(test)
+        return self._tokenize(test, limit)
 
     def _tokenize(
-        self, stream: t.Iterator[t.Tuple[int, str]]
+        self, stream: t.Iterator[t.Tuple[int, str]], limit: int
     ) -> AGNewsDataset:
         tokenizer = td.get_tokenizer("basic_english")
-        return AGNewsDataset(
-            [(label - 1, tokenizer(text)) for label, text in stream]
-        )
+        items = []
+        for _ in range(limit):
+            label, text = next(stream)
+            items.append((label - 1, tokenizer(text)))
+        return AGNewsDataset(items)
 
 
-def build_ag_news_vocabulary(
-    agnews: AGNewsDataset, pad_index: int = 0
-) -> v.Vocabulary:
+def build_ag_news_vocabulary(agnews: AGNewsDataset) -> vo.Vocab:
     """Learn the vocabulary of `agnews`."""
-    return v.build_vocabulary(
-        ([tokens] for label, tokens in agnews), pad_index=pad_index
-    )
+    return v.build_vocabulary((tokens for _, tokens in agnews))
 
 
 def create_dataloader(
@@ -139,10 +138,3 @@ def create_dataloader(
     return da.DataLoader(
         dataset, batch_size=batch_size, collate_fn=AgNewsCollateFn(vocabulary)
     ), len(vocabulary)
-
-
-# def create_train_sentence_dataloader(
-#     batch_size: t.Optional[int] = 1,
-#     pad_index: int = 0,
-#     limit: int = ) -> t.Tuple[da.DataLoader]:
-#     """"""

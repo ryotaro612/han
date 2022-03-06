@@ -55,11 +55,14 @@ class Vocabulary:
 def build_vocabulary(
     sentences: t.Iterator[t.Iterator[str]],
     unknown_index: int = -1,
-    pad_index: int = 0,
-) -> Vocabulary:
-    """Build vocabulary."""
+) -> v.Vocab:
+    """Build vocabulary.
+
+    Each element of `sentence` is a list of words.
+
+    """
     vocab: v.Vocab = v.build_vocab_from_iterator(
-        (word for words in sentences for word in words)
+        (sentence for sentence in sentences)
     )
     vocab.set_default_index(unknown_index)
-    return Vocabulary(vocab, pad_index)
+    return vocab
