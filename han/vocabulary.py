@@ -57,7 +57,7 @@ def build_vocabulary(
     unknown_index: int = -1,
     pad_index: int = 0,
 ) -> Vocabulary:
-    """Build a vocabulary."""
+    """Build vocabulary."""
     vocab: v.Vocab = v.build_vocab_from_iterator(
         (word for words in sentences for word in words)
     )

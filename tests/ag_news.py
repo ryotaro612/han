@@ -11,6 +11,7 @@ class AGNewsDataset(da.Dataset):
     """A wrapper of ag news.
 
     Each item is a tuple. The first item is a label.
+    Each label is between 0 and 3.
     The second one a list of tokens. The type of the tokens are str.
 
     The source is
@@ -80,10 +81,40 @@ def get_train(limit: int = 120000) -> AGNewsDataset:
     return AGNewsDataset(items)
 
 
+class ANewsDatasetFactory:
+    """Load and tokenize AGNews."""
+
+    def get_train(self, limit: int = 120000) -> AGNewsDataset:
+        """Get train data."""
+        if limit > 120000:
+            raise RuntimeError(
+                f"{limit} is greater than the number of the total train data."
+            )
+        train = d.AG_NEWS(split="train")
+        return self._tokenize(train)
+
+    def get_test(self, limit: int = 7600) -> AGNewsDataset:
+        """Get train data."""
+        if limit > 7600:
+            raise RuntimeError(
+                f"{limit} is greater than the number of the total test data."
+            )
+        test = d.AG_NEWS(split="test")
+        return self._tokenize(test)
+
+    def _tokenize(
+        self, stream: t.Iterator[t.Tuple[int, str]]
+    ) -> AGNewsDataset:
+        tokenizer = td.get_tokenizer("basic_english")
+        return AGNewsDataset(
+            [(label - 1, tokenizer(text)) for label, text in stream]
+        )
+
+
 def build_ag_news_vocabulary(
     agnews: AGNewsDataset, pad_index: int = 0
 ) -> v.Vocabulary:
-    """Learn vocabulary."""
+    """Learn the vocabulary of `agnews`."""
     return v.build_vocabulary(
         ([tokens] for label, tokens in agnews), pad_index=pad_index
     )
@@ -108,3 +139,10 @@ def create_dataloader(
     return da.DataLoader(
         dataset, batch_size=batch_size, collate_fn=AgNewsCollateFn(vocabulary)
     ), len(vocabulary)
+
+
+# def create_train_sentence_dataloader(
+#     batch_size: t.Optional[int] = 1,
+#     pad_index: int = 0,
+#     limit: int = ) -> t.Tuple[da.DataLoader]:
+#     """"""
