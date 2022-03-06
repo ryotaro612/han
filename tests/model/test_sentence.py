@@ -2,9 +2,11 @@ import unittest
 import torch
 import torch.nn as nn
 import torch.testing as te
+import torch.utils.data as da
+import torchtext.vocab as vo
+import han.model.sentence as m
 import tests.marker as marker
 import tests.ag_news as ag
-import han.model.sentence as m
 
 
 class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
@@ -93,26 +95,29 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
 
 
 @unittest.skipUnless(marker.run_integration_tests, marker.skip_reason)
-class IntegrationTestCase(unittest.TestCase):
+class HierarchicalAttentionSentenceNetworkClassifierIntegrationTestCase(
+    unittest.TestCase
+):
     def test(self):
-        """
+        """Dry run.
+
         References
         ----------
         https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html#full-implementation
         https://developers.google.com/machine-learning/guides/text-classification/step-4
 
         """
-        pad_index = 0
-        dataloader, vocabulary_size = ag.create_dataloader(
-            batch_size=10, pad_index=pad_index, limit=120000
+        agnews_train: ag.AGNewsDataset = ag.AGNewsDatasetFactory().get_train()
+        vocabulary: vo.Vocab = ag.build_ag_news_vocabulary(agnews_train)
+        dataloader = da.DataLoader(
+            agnews_train,
+            batch_size=10,
+            collate_fn=ag.AgNewsCollateSentenceFn(vocabulary),
         )
-        # the size of a batch
-        size = len(dataloader)
-        mlp_output_size = 100
         model = m.HierarchicalAttentionSentenceNetworkClassifier(
-            vocabulary_size,
-            padding_idx=pad_index,
-            mlp_output_size=mlp_output_size,
+            len(vocabulary) + 1,  # unknown word.
+            padding_idx=0,
+            linear_output_size=100,
             num_of_classes=4,
         )
         model.train()
@@ -120,17 +125,14 @@ class IntegrationTestCase(unittest.TestCase):
         total_acc = 0
         total_count = 0
         last_process = 0
-        # optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
         optimizer = torch.optim.Adagrad(model.parameters())
-        for _ in range(2):
-            for batch_index, (
-                word_index,
-                sentence_lengths,
-                labels,
-            ) in enumerate(dataloader):
+        epoch = 2
+        for _ in range(epoch):
+            for batch_index, (sentences_index, labels) in enumerate(
+                dataloader
+            ):
 
-                pred = model(word_index, sentence_lengths)
-                print(pred.shape)
+                pred = model(sentences_index)
                 loss = loss_fn(pred, labels)
                 optimizer.zero_grad()
                 loss.backward()
@@ -149,4 +151,4 @@ class IntegrationTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    IntegrationTestCase().test()
+    HierarchicalAttentionSentenceNetworkClassifierIntegrationTestCase().test()

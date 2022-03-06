@@ -18,7 +18,7 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         padding_idx: int,
         embedding_dim: int = 200,
         gru_hidden_size: int = 50,
-        mlp_output_size: int = 100,
+        output_dim: int = 100,
     ):
         """Take hyper parameters.
 
@@ -42,9 +42,9 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
             hidden_size=gru_hidden_size,
             bidirectional=True,
         )
-        self.linear = nn.Linear(gru_hidden_size * 2, mlp_output_size)
+        self.linear = nn.Linear(gru_hidden_size * 2, output_dim)
         self.tanh = nn.Tanh()
-        self.context_weights = nn.Parameter(torch.Tensor(mlp_output_size, 1))
+        self.context_weights = nn.Parameter(torch.Tensor(output_dim, 1))
 
     def forward(
         self, x: list[torch.Tensor]
@@ -133,7 +133,7 @@ class HierarchicalAttentionSentenceNetworkClassifier(nn.Module):
         self,
         vocabulary_size: int,
         padding_idx: int,
-        mlp_output_size: int,
+        linear_output_size: int,
         num_of_classes: int,
     ):
         """`num_of_classes' is the number of the classes."""
@@ -142,10 +142,10 @@ class HierarchicalAttentionSentenceNetworkClassifier(nn.Module):
             HierarchicalAttentionSentenceNetwork(
                 vocabulary_size,
                 padding_idx=padding_idx,
-                mlp_output_size=mlp_output_size,
+                output_dim=linear_output_size,
             )
         )
-        self.linear = nn.Linear(mlp_output_size, num_of_classes)
+        self.linear = nn.Linear(linear_output_size, num_of_classes)
 
     def forward(self, x: list[torch.Tensor]) -> torch.Tensor:
         """Calculate sentence vectors, and attentions.
