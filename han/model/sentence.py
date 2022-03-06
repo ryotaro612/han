@@ -30,6 +30,7 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
 
         """
         super(HierarchicalAttentionSentenceNetwork, self).__init__()
+        self.padding_idx = padding_idx
         self.embedding = nn.Embedding(
             num_embeddings=vocabulary_size,
             embedding_dim=embedding_dim,
@@ -41,36 +42,44 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
             hidden_size=gru_hidden_size,
             bidirectional=True,
         )
-        self.mlp = nn.Linear(gru_hidden_size * 2, mlp_output_size)
+        self.linear = nn.Linear(gru_hidden_size * 2, mlp_output_size)
         self.tanh = nn.Tanh()
         self.context_weights = nn.Parameter(torch.Tensor(mlp_output_size, 1))
 
     def forward(
-        self, x: torch.Tensor, lengths: list[int]
+        self, x: list[torch.Tensor]
     ) -> t.Tuple[torch.Tensor, torch.Tensor]:
         """Calculate sentence vectors, and attentions.
 
-        x is a word index matrix. The shape is
-        (batch size, number of the words in the longest sentence)
-
-        Each item of lengths is the number of the words in each
-        sentence before padding.
+        `x` is a list of index sentences.
+        `x` should be in the descreasing order of length.
 
         """
+        lengths = self._get_lengths(x)
+        # x.shape is (longest length, batch size)
+        x = self._pad_sequence(x)
         # x.shape is (longest length, batch size, embedding dim)
         x: torch.Tensor = self.embedding(x)
-        x: r.PackedSequence = self.pack_embeddings(x, lengths)
+        x: r.PackedSequence = self._pack_embeddings(x, lengths)
         h: torch.Tensor = self.gru(x)[0]
         del x
-        # MLP cannot accept any packed sequences.
+        # Linear cannot accept any packed sequences.
         h, _ = r.pad_packed_sequence(h)
-        u: torch.Tensor = self.tanh(self.mlp(h))
-        u = self.mul_context_vector(u, self.context_weights)
-        alpha = self.calc_softmax(u)
+        u: torch.Tensor = self.tanh(self.linear(h))
+        u = self._mul_context_vector(u, self.context_weights)
+        alpha = self._calc_softmax(u)
         del u
-        return self.calc_sentence_vector(alpha, h), alpha
+        return self._calc_sentence_vector(alpha, h), alpha
 
-    def pack_embeddings(
+    def _get_lengths(self, x: list[torch.Tensor]) -> list[int]:
+        """Get the lengths of each item."""
+        return [e.size()[0] for e in x]
+
+    def _pad_sequence(self, x: list[torch.Tensor]) -> torch.Tensor:
+        """Pad a list of variable neght tensors with `self.padding_idx`."""
+        return r.pad_sequence(x, padding_value=self.padding_idx).to(torch.int)
+
+    def _pack_embeddings(
         self, x: torch.Tensor, lengths: list[int]
     ) -> r.PackedSequence:
         """Pack padded and embedded words.
@@ -79,9 +88,11 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         (the longest length of the sentences, batch size, embedding dim).
 
         """
-        return r.pack_padded_sequence(x, lengths, enforce_sorted=False)
+        return r.pack_padded_sequence(x, lengths)
 
-    def mul_context_vector(self, u: torch.Tensor, context_param: torch.Tensor):
+    def _mul_context_vector(
+        self, u: torch.Tensor, context_param: torch.Tensor
+    ):
         """Calulate arguments for softmax.
 
         The shape of u is
@@ -93,7 +104,7 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         """
         return torch.matmul(u, context_param)
 
-    def calc_softmax(self, x: torch.Tensor):
+    def _calc_softmax(self, x: torch.Tensor):
         """Calculate softmax.
 
         The shape of x is (the number of words in a sentence, word dimension).
@@ -102,7 +113,7 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         """
         return nn.Softmax(dim=0)(x)
 
-    def calc_sentence_vector(self, alpha: torch.Tensor, h: torch.Tensor):
+    def _calc_sentence_vector(self, alpha: torch.Tensor, h: torch.Tensor):
         """Calculate word or doc vector.
 
         The shape of alpha is
@@ -136,53 +147,12 @@ class HierarchicalAttentionSentenceNetworkClassifier(nn.Module):
         )
         self.linear = nn.Linear(mlp_output_size, num_of_classes)
 
-    def forward(self, x: torch.Tensor, lengths: list[int]) -> torch.Tensor:
+    def forward(self, x: list[torch.Tensor]) -> torch.Tensor:
         """Calculate sentence vectors, and attentions.
 
-        x is a word index matrix. The shape is
-        (batch size, number of the words in the longest sentence)
-
-        Each item of lengths is the number of the words in each
-        sentence before padding.
+        x is a list of sentences.
+        A sentence is a tensor that each word index.
 
         """
-        x, _ = self.han(x, lengths)
+        x, _ = self.han(x)
         return self.linear(x)
-
-
-class DebugModel(nn.Module):
-    """A simple model for debugging."""
-
-    def __init__(
-        self,
-        vocabulary_size: int,
-        padding_idx: int,
-        embedding_dim: int,
-        gru_hidden_size: int,
-        num_of_classes: int,
-    ):
-        """Take parameters to create inner layers."""
-        super(DebugModel, self).__init__()
-        self.embedding = nn.Embedding(
-            num_embeddings=vocabulary_size,
-            embedding_dim=embedding_dim,
-            padding_idx=padding_idx,
-            sparse=True,
-        )
-        # self.gru = nn.GRU(
-        #     input_size=embedding_dim,
-        #     hidden_size=gru_hidden_size,
-        #     bidirectional=True,
-        # )
-        self.relu = nn.ReLU()
-        self.linear = nn.Linear(embedding_dim, num_of_classes)
-
-    def forward(self, x: torch.Tensor, lengths: list[int]):
-        """Forward."""
-        x: torch.Tensor = self.embedding(x)
-        # x: r.PackedSequence = r.pack_padded_sequence(
-        #     x, lengths, enforce_sorted=False
-        # )
-        # _, h_n = self.gru(x)
-        # x = torch.cat([h_n[0, :, :], h_n[1, :, :]], 1)
-        return self.relu(self.linear(torch.mean(x, dim=0)))

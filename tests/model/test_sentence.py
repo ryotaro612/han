@@ -18,14 +18,14 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
         )
         self.assertEqual(torch.Size([2, 3, 4]), u.shape)
         context = torch.Tensor([1, 1, 1, 1])
-        res = sut.mul_context_vector(u, context)
+        res = sut._mul_context_vector(u, context)
 
         te.assert_close(res, torch.Tensor([[7, 10, 8], [15, 13, 10]]))
 
     def test_word_softmax(self):
         sut = m.HierarchicalAttentionSentenceNetwork(10, 0)
         x = torch.Tensor([[1, 2], [3, 4], [5, 1]])
-        res = sut.calc_softmax(x)
+        res = sut._calc_softmax(x)
 
         te.assert_close(
             torch.Tensor([res[0][0] + res[1][0] + res[2][0]]),
@@ -45,7 +45,7 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
         )
         self.assertEqual(torch.Size([2, 3, 4]), h.shape)
         sut = m.HierarchicalAttentionSentenceNetwork(10, 0)
-        res = sut.calc_sentence_vector(alpha, h)
+        res = sut._calc_sentence_vector(alpha, h)
         te.assert_close(
             res, torch.Tensor([[5, 5, 5, 5], [7, 7, 7, 7], [9, 9, 9, 9]])
         )
@@ -53,16 +53,16 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
     def test_pack_embeddings(self):
         a = torch.Tensor(
             [
-                [[1, 1], [2, 2], [8, 8]],
-                [[4, 4], [5, 5], [0, 0]],
-                [[0, 0], [7, 7], [0, 0]],
+                [[2, 2], [1, 1], [8, 8]],
+                [[5, 5], [4, 4], [0, 0]],
+                [[7, 7], [0, 0], [0, 0]],
             ]
         )
         self.assertEqual(torch.Size([3, 3, 2]), a.shape)
         sut = m.HierarchicalAttentionSentenceNetwork(10, 0)
-        res = sut.pack_embeddings(
+        res = sut._pack_embeddings(
             a,
-            [2, 3, 1],
+            [3, 2, 1],
         )
 
         te.assert_allclose(
@@ -77,6 +77,18 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
                     [7.0, 7.0],
                 ]
             ),
+        )
+
+    def test_get_lengths(self):
+        sut = m.HierarchicalAttentionSentenceNetwork(10, 0)
+        res = sut._get_lengths([torch.tensor([3, 3, 3]), torch.tensor([2])])
+        self.assertEqual(res, [3, 1])
+
+    def test_pad_sequence(self):
+        sut = m.HierarchicalAttentionSentenceNetwork(10, 0)
+        res = sut._pad_sequence([torch.tensor([3, 3, 3]), torch.tensor([2])])
+        te.assert_close(
+            res, torch.tensor([[3, 2], [3, 0], [3, 0]]).to(torch.int)
         )
 
 
@@ -103,13 +115,6 @@ class IntegrationTestCase(unittest.TestCase):
             mlp_output_size=mlp_output_size,
             num_of_classes=4,
         )
-        # model = m.DebugModel(
-        #     vocabulary_size=vocabulary_size,
-        #     padding_idx=pad_index,
-        #     embedding_dim=200,
-        #     gru_hidden_size=50,
-        #     num_of_classes=4,
-        # )
         model.train()
         loss_fn = nn.CrossEntropyLoss()
         total_acc = 0
