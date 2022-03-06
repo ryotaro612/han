@@ -66,6 +66,34 @@ class AgNewsCollateFn:
         return word_tensor, lengths, labels
 
 
+class AgNewsCollateSentenceFn:
+    """Colleate for sentece embedding."""
+
+    def __init__(self, vocabulary: vo.Vocab):
+        """Take learned `vocabulary`."""
+        self.vocabulary = vocabulary
+
+    def __call__(
+        self, batch: list[t.Tuple[int, list[str]]]
+    ) -> t.Tuple[list[torch.Tensor], torch.Tensor]:
+        """Return the list of sentences, and labels.
+
+        Sort the batch by the length of a sentence in a decreasing order,
+
+        The second item is typed `torch.long` because training feature
+        requred long typed labels.
+
+        """
+        batch = sorted(batch, key=lambda e: len(e[1]), reverse=True)
+        labels: torch.Tensor = torch.Tensor([item[0] for item in batch]).to(
+            torch.long
+        )
+        index_sentences = [
+            torch.Tensor(self.vocabulary.forward(item[1])) for item in batch
+        ]
+        return index_sentences, labels
+
+
 def get_train(limit: int = 120000) -> AGNewsDataset:
     """Get training dataset.
 
