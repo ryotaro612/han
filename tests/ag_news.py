@@ -42,7 +42,7 @@ class AGNewsDataset(da.Dataset):
 
 
 class AgNewsCollateSentenceFn:
-    """Colleate for sentece embedding."""
+    """Create a list of int tensors."""
 
     def __init__(self, vocabulary: vo.Vocab):
         """Take learned `vocabulary`."""
@@ -67,6 +67,36 @@ class AgNewsCollateSentenceFn:
             torch.Tensor(self.vocabulary.forward(item[1])) for item in batch
         ]
         return index_sentences, labels
+
+
+class AgNewsCollateDocumentFn:
+    """Split tokens by periods."""
+
+    def __init__(self, vocabulary: vo.Vocab):
+        """Take learned `vocabulary`."""
+        self.vocabulary = vocabulary
+
+    def __call__(
+        self, batch: list[t.Tuple[int, list[str]]]
+    ) -> t.Tuple[list[list[torch.Tensor]], torch.Tensor]:
+        """Return indexed documents and labels."""
+        labels: torch.Tensor = torch.Tensor([item[0] for item in batch]).to(
+            torch.long
+        )
+        documents = []
+        for text in (item[1] for item in batch):
+            document = []
+            sentence = []
+            for word in text:
+                sentence.append(word)
+                if word == ".":
+                    document.append(sentence)
+                    sentence = []
+
+            if len(sentence) > 0:
+                document.append(sentence)
+            documents.append(document)
+        return documents, labels
 
 
 class AGNewsDatasetFactory:

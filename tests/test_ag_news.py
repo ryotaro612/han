@@ -28,6 +28,34 @@ class AgNewsCollateSentenceFnTestCase(unittest.TestCase):
             tt.assert_close(labels, torch.Tensor([2, 3, 1]).to(torch.long))
 
 
+class AgNewsCollateDocumentFnTestCase(unittest.TestCase):
+    def test(self):
+        vocabulary = v.build_vocabulary(
+            [
+                ["duck", "cat"],
+                ["dog", "lion", "penguin", "banana"],
+                ["apple"],
+            ]
+        )
+        sut = ag.AgNewsCollateDocumentFn(vocabulary)
+        documents, labels = sut(
+            [
+                (1, ["duck", "lion", ".", "cat", "."]),
+                (0, ["dog"]),
+                (2, ["penguin", "banana", "apple", "."]),
+            ]
+        )
+        self.assertEqual(
+            documents,
+            [
+                [["duck", "lion", "."], ["cat", "."]],
+                [["dog"]],
+                [["penguin", "banana", "apple", "."]],
+            ],
+        )
+        tt.assert_close(labels, torch.Tensor([1, 0, 2]).to(torch.long))
+
+
 class BuildAgNewsVocabularyTestCase(unittest.TestCase):
     def test_learn(self):
         news = ag.AGNewsDatasetFactory().get_train(1)
