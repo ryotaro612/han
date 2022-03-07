@@ -37,7 +37,8 @@ class HierarchicalAttentionNetwork(nn.Module):
         TODO
         ----
         torch.select_indexで選べる
-        sentenceの単語の並び順はオプションにする
+        sentenceの単語の並び順を強制させないで、Docの実装を単純にしたい
+
         """
         alpha_placeholder = self._create_placeholder(x)
         x_placeholder = self._create_placeholder(x)
