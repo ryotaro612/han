@@ -69,7 +69,9 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         u = self._mul_context_vector(u, self.context_weights)
         alpha = self._calc_softmax(u)
         del u
-        return self._calc_sentence_vector(alpha, h), alpha
+        x = self._calc_sentence_vector(alpha, h)
+        alpha = torch.squeeze(alpha, dim=2)
+        return x, alpha
 
     def _get_lengths(self, x: list[torch.Tensor]) -> list[int]:
         """Get the lengths of each item."""

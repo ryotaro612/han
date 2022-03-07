@@ -32,8 +32,30 @@ class HierarchicalAttentionNetwork(nn.Module):
         )
 
     def forward(self, x: list[list[torch.Tensor]]) -> torch.Tensor:
-        """"""
+        """
 
+        TODO
+        ----
+        torch.select_indexで選べる
+        sentenceの単語の並び順はオプションにする
+        """
+        alpha_placeholder = self._create_placeholder(x)
+        x_placeholder = self._create_placeholder(x)
+        x, order = self._arrange(x)
+        print(x)
+        print(order)
+        # x: (num of sentences, dim)
+        # alpha: (num of words in the longest sentence, num of sentences)
+
+        x, alpha = self.han(x)
+        print(x.shape)
+        print(alpha.shape)
+        raise NotImplementedError()
+
+    def _arrange(
+        self, x: list[list[torch.Tensor]]
+    ) -> t.Tuple[list[t.Tuple[int, int]], list[torch.Tensor]]:
+        """"""
         x: list[t.Tuple[int, int, torch.Tensor]] = sorted(
             [
                 (document_i, sentence_i, sentence)
@@ -43,14 +65,27 @@ class HierarchicalAttentionNetwork(nn.Module):
             key=lambda e: len(e[2]),
             reverse=True,
         )
-        order = dict(
-            (index, (document_i, sentence_i))
-            for index, (document_i, sentence_i, _) in enumerate(x)
-        )
-        print(order)
-        res = self.han([e[2] for e in x])
-        print(res)
-        raise NotImplementedError()
+
+        return [e[2] for e in x], [e[:2] for e in x]
+
+    def _as_documents(
+        self,
+        x: torch.Tensor,
+        alpha: torch.Tensor,
+        order: list[t.Tuple[int, int]],
+        alpha_placeholder,
+        x_placeholder,
+    ) -> nn.utils.rnn.PackedSequence:
+        """
+
+        x: (num of all the sentences, sentence dim)
+        alpha: (num of the words in the longest sentences, num of all the sentences)
+        """
+        for doc_i, sentence_i in order:
+            pass
+
+    def _create_placeholder(self, size: list[list]):
+        return [[] * len(e) for e in size] * len(size)
 
 
 class HierarchicalAttentionNetworkClassifier(nn.Module):

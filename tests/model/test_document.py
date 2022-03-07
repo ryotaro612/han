@@ -16,7 +16,7 @@ class HierachicalAttentionNetworkTestCase(unittest.TestCase):
                         ".",
                     ],
                 ),
-                (1, ["quick", "brown", "fox", ".", "jumps", "over"]),
+                (1, ["quick", "brown", "fox", ".", "jumps"]),
                 (
                     2,
                     [
