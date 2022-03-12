@@ -6,6 +6,7 @@ import tests.ag_news as ag
 
 
 class HierachicalAttentionNetworkTestCase(unittest.TestCase):
+    @unittest.skipUnless(marker.run_integration_tests, marker.skip_reason)
     def test_smoke(self):
         agnews = ag.AGNewsDataset(
             [

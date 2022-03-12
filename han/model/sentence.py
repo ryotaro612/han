@@ -8,17 +8,18 @@ import torch.nn.utils.rnn as r
 class HierarchicalAttentionSentenceNetwork(nn.Module):
     """Define Hierarchical Attention Network.
 
-    Transform word index to a sentence vector.
+    Transform word index to sentence vectors.
 
     """
 
     def __init__(
         self,
         vocabulary_size: int,
-        padding_idx: int,
+        padding_idx: int = 0,
         embedding_dim: int = 200,
         gru_hidden_size: int = 50,
         output_dim: int = 100,
+        pre_sorted: bool = True,
     ):
         """Take hyper parameters.
 
@@ -45,6 +46,7 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         self.linear = nn.Linear(gru_hidden_size * 2, output_dim)
         self.tanh = nn.Tanh()
         self.context_weights = nn.Parameter(torch.Tensor(output_dim, 1))
+        self.pre_sorted = pre_sorted
 
     def forward(
         self, x: list[torch.Tensor]
@@ -55,6 +57,16 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         `x` should be in the descreasing order of length.
 
         """
+        if self.pre_sorted:
+            return self._forward(x)
+
+        x, order = self._arrange(x)
+        x, alpha = self._forward(x)
+        x = torch.index_select(input=x, dim=0, index=order)
+        alpha = torch.index_select(input=alpha, dim=1, index=order)
+        return x, alpha
+
+    def _forward(self, x: list[torch.Tensor]):
         lengths = self._get_lengths(x)
         # x.shape is (longest length, batch size)
         x = self._pad_sequence(x)
@@ -72,6 +84,22 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         x = self._calc_sentence_vector(alpha, h)
         alpha = torch.squeeze(alpha, dim=2)
         return x, alpha
+
+    def _arrange(
+        self, x: list[torch.Tensor]
+    ) -> t.Tuple[list[torch.Tensor], list[int]]:
+        indexed_sentences: list[t.Tuple[int, torch.Tensor]] = sorted(
+            [(index, sentence) for index, sentence in enumerate(x)],
+            key=lambda e: len(e[1]),
+            reverse=True,
+        )
+        order = [None] * len(x)
+        arranged = [None] * len(x)
+        for index, (original_index, sentence) in enumerate(indexed_sentences):
+            arranged[index] = sentence
+            order[original_index] = index
+
+        return arranged, torch.Tensor(order).to(torch.int)
 
     def _get_lengths(self, x: list[torch.Tensor]) -> list[int]:
         """Get the lengths of each item."""

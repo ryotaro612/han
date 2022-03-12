@@ -24,6 +24,25 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
 
         te.assert_close(res, torch.Tensor([[7, 10, 8], [15, 13, 10]]))
 
+    def test_arrange(self):
+        sut = m.HierarchicalAttentionSentenceNetwork(1)
+        texts = [
+            torch.Tensor([1, 2]),
+            torch.Tensor([2]),
+            torch.Tensor([3, 2, 1]),
+        ]
+        res, order = sut._arrange(texts)
+
+        te.assert_close(
+            res,
+            [
+                torch.Tensor([3, 2, 1]),
+                torch.Tensor([1, 2]),
+                torch.Tensor([2]),
+            ],
+        )
+        te.assert_close(order, torch.Tensor([1, 2, 0]).to(torch.int))
+
     def test_word_softmax(self):
         sut = m.HierarchicalAttentionSentenceNetwork(10, 0)
         x = torch.Tensor([[1, 2], [3, 4], [5, 1]])
