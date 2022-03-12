@@ -44,9 +44,10 @@ class AGNewsDataset(da.Dataset):
 class AgNewsCollateSentenceFn:
     """`__call__` emits list of tensors."""
 
-    def __init__(self, vocabulary: vo.Vocab):
+    def __init__(self, vocabulary: vo.Vocab, enforce_sorted: bool):
         """Take learned `vocabulary`."""
         self.vocabulary = vocabulary
+        self.enforce_sorted = enforce_sorted
 
     def __call__(
         self, batch: list[t.Tuple[int, list[str]]]
@@ -59,6 +60,8 @@ class AgNewsCollateSentenceFn:
         requred long typed labels.
 
         """
+        if self.enforce_sorted:
+            batch = sorted(batch, key=lambda e: len(e[1]), reverse=True)
         labels: torch.Tensor = torch.Tensor([item[0] for item in batch]).to(
             torch.long
         )

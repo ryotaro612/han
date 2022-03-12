@@ -19,7 +19,7 @@ class AgNewsCollateSentenceFnTestCase(unittest.TestCase):
                 (2, ["cat", "dog", "leopard"]),
             ],
             batch_size=3,
-            collate_fn=ag.AgNewsCollateSentenceFn(vocabulary),
+            collate_fn=ag.AgNewsCollateSentenceFn(vocabulary, True),
         )
         for sentence_index, labels in sut:
             self.assertEqual(sentence_index[0].shape, torch.Size([3]))
