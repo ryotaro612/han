@@ -59,7 +59,6 @@ class AgNewsCollateSentenceFn:
         requred long typed labels.
 
         """
-        batch = sorted(batch, key=lambda e: len(e[1]), reverse=True)
         labels: torch.Tensor = torch.Tensor([item[0] for item in batch]).to(
             torch.long
         )

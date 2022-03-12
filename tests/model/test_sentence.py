@@ -131,6 +131,7 @@ class HierarchicalAttentionSentenceNetworkClassifierIntegrationTestCase(
         dataloader = da.DataLoader(
             agnews_train,
             batch_size=10,
+            shuffle=True,
             collate_fn=ag.AgNewsCollateSentenceFn(vocabulary),
         )
         model = m.HierarchicalAttentionSentenceNetworkClassifier(

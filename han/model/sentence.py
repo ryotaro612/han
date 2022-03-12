@@ -173,6 +173,7 @@ class HierarchicalAttentionSentenceNetworkClassifier(nn.Module):
                 vocabulary_size,
                 padding_idx=padding_idx,
                 output_dim=linear_output_size,
+                pre_sorted=False,
             )
         )
         self.linear = nn.Linear(linear_output_size, num_of_classes)
