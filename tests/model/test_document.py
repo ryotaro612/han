@@ -5,7 +5,7 @@ import tests.marker as marker
 import tests.ag_news as ag
 
 
-class HierachicalAttentionNetworkTestCase(unittest.TestCase):
+class DocumentModelTestCase(unittest.TestCase):
     @unittest.skipUnless(marker.run_integration_tests, marker.skip_reason)
     def test_smoke(self):
         agnews = ag.AGNewsDataset(
@@ -43,15 +43,13 @@ class HierachicalAttentionNetworkTestCase(unittest.TestCase):
             batch_size=3,
             collate_fn=ag.AgNewsCollateDocumentFn(vocabulary),
         )
-        model = d.HierarchicalAttentionNetwork(len(vocabulary) + 1)
+        model = d.DocumentModel(len(vocabulary) + 1)
         for documents, _ in dataloader:
             model(documents)
 
 
 @unittest.skipUnless(marker.run_integration_tests, marker.skip_reason)
-class HierarchicalAttentionNetworkClassifierIntegrationTestCase(
-    unittest.TestCase
-):
+class DocumentClassifierIntegrationTestCase(unittest.TestCase):
     def test(self):
         agnews_train = ag.AGNewsDatasetFactory().get_train()
         vocabulary = ag.build_ag_news_vocabulary(agnews_train)
@@ -60,9 +58,7 @@ class HierarchicalAttentionNetworkClassifierIntegrationTestCase(
             batch_size=10,
             collate_fn=ag.AgNewsCollateDocumentFn(vocabulary),
         )
-        model = d.HierarchicalAttentionNetworkClassifier(
-            len(vocabulary) + 1, 4
-        )
+        model = d.DocumentClassifier(len(vocabulary) + 1, 4)
         model.train()
         epoch = 2
         for _ in range(epoch):
@@ -71,4 +67,4 @@ class HierarchicalAttentionNetworkClassifierIntegrationTestCase(
 
 
 if __name__ == "__main__":
-    HierarchicalAttentionNetworkClassifierIntegrationTestCase().test()
+    DocumentClassifierIntegrationTestCase().test()

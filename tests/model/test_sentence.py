@@ -9,9 +9,9 @@ import tests.marker as marker
 import tests.ag_news as ag
 
 
-class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
+class SetenceModelTestCase(unittest.TestCase):
     def test(self):
-        sut = m.HierarchicalAttentionSentenceNetwork(10, 0)
+        sut = m.SentenceModel(10, 0)
         u = torch.Tensor(
             [
                 [[1, 2, 3, 1], [3, 4, 1, 2], [2, 2, 1, 3]],
@@ -25,7 +25,7 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
         te.assert_close(res, torch.Tensor([[7, 10, 8], [15, 13, 10]]))
 
     def test_arrange(self):
-        sut = m.HierarchicalAttentionSentenceNetwork(1)
+        sut = m.SentenceModel(1)
         texts = [
             torch.Tensor([1, 2]),
             torch.Tensor([2]),
@@ -44,7 +44,7 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
         te.assert_close(order, torch.Tensor([1, 2, 0]).to(torch.int))
 
     def test_word_softmax(self):
-        sut = m.HierarchicalAttentionSentenceNetwork(10, 0)
+        sut = m.SentenceModel(10, 0)
         x = torch.Tensor([[1, 2], [3, 4], [5, 1]])
         res = sut._calc_softmax(x)
 
@@ -65,7 +65,7 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
             ]
         )
         self.assertEqual(torch.Size([2, 3, 4]), h.shape)
-        sut = m.HierarchicalAttentionSentenceNetwork(10, 0)
+        sut = m.SentenceModel(10, 0)
         res = sut._calc_sentence_vector(alpha, h)
         te.assert_close(
             res, torch.Tensor([[5, 5, 5, 5], [7, 7, 7, 7], [9, 9, 9, 9]])
@@ -80,7 +80,7 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
             ]
         )
         self.assertEqual(torch.Size([3, 3, 2]), a.shape)
-        sut = m.HierarchicalAttentionSentenceNetwork(10, 0)
+        sut = m.SentenceModel(10, 0)
         res = sut._pack_embeddings(
             a,
             [3, 2, 1],
@@ -101,12 +101,12 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
         )
 
     def test_get_lengths(self):
-        sut = m.HierarchicalAttentionSentenceNetwork(10, 0)
+        sut = m.SentenceModel(10, 0)
         res = sut._get_lengths([torch.tensor([3, 3, 3]), torch.tensor([2])])
         self.assertEqual(res, [3, 1])
 
     def test_pad_sequence(self):
-        sut = m.HierarchicalAttentionSentenceNetwork(10, 0)
+        sut = m.SentenceModel(10, 0)
         res = sut._pad_sequence([torch.tensor([3, 3, 3]), torch.tensor([2])])
         te.assert_close(
             res, torch.tensor([[3, 2], [3, 0], [3, 0]]).to(torch.int)
@@ -114,9 +114,7 @@ class HierarchicalAttentionSentenceNetworkTestCase(unittest.TestCase):
 
 
 @unittest.skipUnless(marker.run_integration_tests, marker.skip_reason)
-class HierarchicalAttentionSentenceNetworkClassifierIntegrationTestCase(
-    unittest.TestCase
-):
+class SentenceClassifierIntegrationTestCase(unittest.TestCase):
     def test(self):
         """Dry run.
 
@@ -134,7 +132,7 @@ class HierarchicalAttentionSentenceNetworkClassifierIntegrationTestCase(
             shuffle=True,
             collate_fn=ag.AgNewsCollateSentenceFn(vocabulary, False),
         )
-        model = m.HierarchicalAttentionSentenceNetworkClassifier(
+        model = m.SentenceModelClassifier(
             len(vocabulary) + 1,  # unknown word.
             padding_idx=0,
             linear_output_size=100,
@@ -171,4 +169,4 @@ class HierarchicalAttentionSentenceNetworkClassifierIntegrationTestCase(
 
 
 if __name__ == "__main__":
-    HierarchicalAttentionSentenceNetworkClassifierIntegrationTestCase().test()
+    SentenceClassifierIntegrationTestCase().test()

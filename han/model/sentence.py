@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.utils.rnn as r
 
 
-class HierarchicalAttentionSentenceNetwork(nn.Module):
+class SentenceModel(nn.Module):
     """Define Hierarchical Attention Network.
 
     Transform word index to sentence vectors.
@@ -30,7 +30,7 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         https://pytorch.org/docs/stable/generated/torch.nn.GRU.html#gru
 
         """
-        super(HierarchicalAttentionSentenceNetwork, self).__init__()
+        super(SentenceModel, self).__init__()
         self.padding_idx = padding_idx
         self.embedding = nn.Embedding(
             num_embeddings=vocabulary_size,
@@ -156,8 +156,8 @@ class HierarchicalAttentionSentenceNetwork(nn.Module):
         return torch.sum(torch.mul(alpha.expand_as(h), h), 0)
 
 
-class HierarchicalAttentionSentenceNetworkClassifier(nn.Module):
-    """Use `HierachicalAttentionSentenceNetwork' for a multi class problem."""
+class SentenceClassifier(nn.Module):
+    """Use `SentenceModel' for a multi class problem."""
 
     def __init__(
         self,
@@ -167,14 +167,12 @@ class HierarchicalAttentionSentenceNetworkClassifier(nn.Module):
         num_of_classes: int,
     ):
         """`num_of_classes' is the number of the classes."""
-        super(HierarchicalAttentionSentenceNetworkClassifier, self).__init__()
-        self.han: HierarchicalAttentionSentenceNetwork = (
-            HierarchicalAttentionSentenceNetwork(
-                vocabulary_size,
-                padding_idx=padding_idx,
-                output_dim=linear_output_size,
-                pre_sorted=False,
-            )
+        super(SentenceClassifier, self).__init__()
+        self.han: SentenceModel = SentenceModel(
+            vocabulary_size,
+            padding_idx=padding_idx,
+            output_dim=linear_output_size,
+            pre_sorted=False,
         )
         self.linear = nn.Linear(linear_output_size, num_of_classes)
 

@@ -5,7 +5,7 @@ import torch.nn as nn
 from . import sentence as s
 
 
-class HierarchicalAttentionNetwork(nn.Module):
+class DocumentModel(nn.Module):
     """Document embedding."""
 
     def __init__(
@@ -17,8 +17,8 @@ class HierarchicalAttentionNetwork(nn.Module):
         output_dim: int = 100,
     ):
         """Take hyper parameters."""
-        super(HierarchicalAttentionNetwork, self).__init__()
-        self.han = s.HierarchicalAttentionSentenceNetwork(
+        super(DocumentModel, self).__init__()
+        self.han = s.SentenceModel(
             vocabulary_size,
             padding_idx,
             embedding_dim,
@@ -89,7 +89,7 @@ class HierarchicalAttentionNetwork(nn.Module):
         return [[] * len(e) for e in size] * len(size)
 
 
-class HierarchicalAttentionNetworkClassifier(nn.Module):
+class DocumentClassifier(nn.Module):
     """Classification."""
 
     def __init__(
@@ -102,7 +102,7 @@ class HierarchicalAttentionNetworkClassifier(nn.Module):
         linear_output_dim: int = 100,
     ):
         """Take hyper parameters."""
-        self.han = HierarchicalAttentionNetwork(
+        self.han = DocumentModel(
             vocabulary_size=vocabulary_size,
             padding_idx=padding_idx,
             embedding_dim=embedding_dim,
