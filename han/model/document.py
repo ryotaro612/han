@@ -54,13 +54,16 @@ class DocumentModel(nn.Module):
         doc_lens = [len(doc) for doc in x]
 
         x, word_alpha = self.sentence_model(sentences)
-        # x is a list of tensors.
+        # x is a tuple of tensors.
         x = torch.split(x, doc_lens)
-        print([len(e) for e in x])
         x = rnn.pad_sequence(x)
-        x = rnn.pack_padded_sequence(x, doc_lens)
+        x = rnn.pack_padded_sequence(x, doc_lens, enforce_sorted=False)
         x = self.gru(x)[0]
-        print(x)
+        # The shape of x is (max num of sentence, num of docs, dim)
+        x, lengths = rnn.pad_packed_sequence(x)
+        print(x.shape)
+        print(lengths)
+        # x = self.gru(x)[0]
 
 
 class DocumentClassifier(nn.Module):

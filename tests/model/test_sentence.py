@@ -24,25 +24,6 @@ class SetenceModelTestCase(unittest.TestCase):
 
         te.assert_close(res, torch.Tensor([[7, 10, 8], [15, 13, 10]]))
 
-    def test_arrange(self):
-        sut = m.SentenceModel(1)
-        texts = [
-            torch.Tensor([1, 2]),
-            torch.Tensor([2]),
-            torch.Tensor([3, 2, 1]),
-        ]
-        res, order = sut._arrange(texts)
-
-        te.assert_close(
-            res,
-            [
-                torch.Tensor([3, 2, 1]),
-                torch.Tensor([1, 2]),
-                torch.Tensor([2]),
-            ],
-        )
-        te.assert_close(order, torch.Tensor([1, 2, 0]).to(torch.int))
-
     def test_word_softmax(self):
         sut = m.SentenceModel(10, 0)
         x = torch.Tensor([[1, 2], [3, 4], [5, 1]])
@@ -166,6 +147,43 @@ class SentenceClassifierIntegrationTestCase(unittest.TestCase):
                         f"acc: {acc:>7f} "
                         f"{total_count:>5d}"
                     )
+
+
+class SortDescreaseTestCase(unittest.TestCase):
+    def test(self):
+        texts = [
+            torch.Tensor([1, 2]),
+            torch.Tensor([2]),
+            torch.Tensor([3, 2, 1]),
+        ]
+        res, order = m.sort_descrease(texts)
+
+        te.assert_close(
+            res,
+            [
+                torch.Tensor([3, 2, 1]),
+                torch.Tensor([1, 2]),
+                torch.Tensor([2]),
+            ],
+        )
+        te.assert_close(order, torch.Tensor([1, 2, 0]).to(torch.int))
+
+    def test_text_is2d(self):
+        texts = [
+            torch.Tensor([[1, 2, 3]]),
+            torch.Tensor([[1, 2], [2, 3]]),
+            torch.Tensor([[2], [2], [1]]),
+        ]
+        res, order = m.sort_descrease(texts)
+        te.assert_close(
+            res,
+            [
+                torch.Tensor([[2], [2], [1]]),
+                torch.Tensor([[1, 2], [2, 3]]),
+                torch.Tensor([[1, 2, 3]]),
+            ],
+        )
+        te.assert_close(order, torch.Tensor([2, 1, 0]).to(torch.int))
 
 
 if __name__ == "__main__":

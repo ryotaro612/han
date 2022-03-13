@@ -63,7 +63,7 @@ class SentenceModel(nn.Module):
         if self.pre_sorted:
             return self._forward(x)
 
-        x, order = self._arrange(x)
+        x, order = sort_descrease(x)
         x, alpha = self._forward(x)
         x = torch.index_select(input=x, dim=0, index=order)
         alpha = torch.index_select(input=alpha, dim=1, index=order)
@@ -87,22 +87,6 @@ class SentenceModel(nn.Module):
         x = self._calc_sentence_vector(alpha, h)
         alpha = torch.squeeze(alpha, dim=2)
         return x, alpha
-
-    def _arrange(
-        self, x: list[torch.Tensor]
-    ) -> t.Tuple[list[torch.Tensor], list[int]]:
-        indexed_sentences: list[t.Tuple[int, torch.Tensor]] = sorted(
-            [(index, sentence) for index, sentence in enumerate(x)],
-            key=lambda e: len(e[1]),
-            reverse=True,
-        )
-        order = [None] * len(x)
-        arranged = [None] * len(x)
-        for index, (original_index, sentence) in enumerate(indexed_sentences):
-            arranged[index] = sentence
-            order[original_index] = index
-
-        return arranged, torch.Tensor(order).to(torch.int)
 
     def _get_lengths(self, x: list[torch.Tensor]) -> list[int]:
         """Get the lengths of each item."""
@@ -213,3 +197,30 @@ class SentenceClassifier(nn.Module):
         """
         x, alpha = self.han(x)
         return self.linear(x), alpha
+
+
+def sort_descrease(
+    x: list[torch.Tensor],
+) -> t.Tuple[list[torch.Tensor], torch.Tensor]:
+    """Sort a list of tensors in a descreasing order.
+
+    Sort a list of tensors in the descreasing order of the length of
+    each tensor.
+
+    Return the sorted x and a tensor of index.  The item in the second
+    item represents the index of `x` to revert the order.
+
+
+    """
+    x: list[t.Tuple[int, torch.Tensor]] = sorted(
+        [(index, sentence) for index, sentence in enumerate(x)],
+        key=lambda e: len(e[1]),
+        reverse=True,
+    )
+    order = [None] * len(x)
+    arranged = [None] * len(x)
+    for index, (original_index, item) in enumerate(x):
+        arranged[index] = item
+        order[original_index] = index
+
+    return arranged, torch.Tensor(order).to(torch.int)
