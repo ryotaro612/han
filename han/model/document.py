@@ -2,6 +2,7 @@
 import typing as t
 import torch
 import torch.nn as nn
+import torch.nn.utils.rnn as rnn
 from . import sentence as s
 
 
@@ -11,15 +12,15 @@ class DocumentModel(nn.Module):
     def __init__(
         self,
         vocabulary_size: int,
-        padding_idx,
-        embedding_dim,
-        gru_hidden_size,
-        output_dim,
+        padding_idx=None,
+        embedding_dim=None,
+        gru_hidden_size=None,
+        output_dim=None,
         doc_gru_hidden_size: t.Optional[int] = None,
     ):
         """Take hyper parameters."""
         super(DocumentModel, self).__init__()
-        self.sentence = s.SentenceModel(
+        self.sentence_model = s.SentenceModel(
             **dict(
                 [
                     (k, v)
@@ -38,64 +39,28 @@ class DocumentModel(nn.Module):
         self.doc_gru_hidden_size = (
             doc_gru_hidden_size
             if doc_gru_hidden_size
-            else self.sentence.gru_hidden_size
+            else self.sentence_model.gru_hidden_size
         )
 
         self.gru = nn.GRU(
-            input_size=self.sentence.output_dim,
+            input_size=self.sentence_model.output_dim,
             hidden_size=self.doc_gru_hidden_size,
             bidirectional=True,
         )
 
     def forward(self, x: list[list[torch.Tensor]]) -> torch.Tensor:
-        """ """
-        alpha_placeholder = self._create_placeholder(x)
-        x_placeholder = self._create_placeholder(x)
-        x, order = self._arrange(x)
+        """Take a document index."""
+        sentences = [sentence for document in x for sentence in document]
+        doc_lens = [len(doc) for doc in x]
+
+        x, word_alpha = self.sentence_model(sentences)
+        # x is a list of tensors.
+        x = torch.split(x, doc_lens)
+        print([len(e) for e in x])
+        x = rnn.pad_sequence(x)
+        x = rnn.pack_padded_sequence(x, doc_lens)
+        x = self.gru(x)[0]
         print(x)
-        print(order)
-        # x: (num of sentences, dim)
-        # alpha: (num of words in the longest sentence, num of sentences)
-
-        x, alpha = self.han(x)
-        print(x.shape)
-        print(alpha.shape)
-        raise NotImplementedError()
-
-    def _arrange(
-        self, x: list[list[torch.Tensor]]
-    ) -> t.Tuple[list[t.Tuple[int, int]], list[torch.Tensor]]:
-        """"""
-        x: list[t.Tuple[int, int, torch.Tensor]] = sorted(
-            [
-                (document_i, sentence_i, sentence)
-                for document_i, document in zip(range(len(x)), x)
-                for sentence_i, sentence in zip(range(len(document)), document)
-            ],
-            key=lambda e: len(e[2]),
-            reverse=True,
-        )
-
-        return [e[2] for e in x], [e[:2] for e in x]
-
-    def _as_documents(
-        self,
-        x: torch.Tensor,
-        alpha: torch.Tensor,
-        order: list[t.Tuple[int, int]],
-        alpha_placeholder,
-        x_placeholder,
-    ) -> nn.utils.rnn.PackedSequence:
-        """
-
-        x: (num of all the sentences, sentence dim)
-        alpha: (num of the words in the longest sentences, num of all the sentences)
-        """
-        for doc_i, sentence_i in order:
-            pass
-
-    def _create_placeholder(self, size: list[list]):
-        return [[] * len(e) for e in size] * len(size)
 
 
 class DocumentClassifier(nn.Module):

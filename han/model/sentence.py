@@ -54,7 +54,11 @@ class SentenceModel(nn.Module):
 
         `x` is a list of index sentences.  `x` should be in the
         descreasing order of length if `self.pre_sorted` is `True`.
-
+        Return a tuple of two tensors.  The first one that it
+        transformed x to, and its shape is
+        (num of `x`, `self.output_dim`)
+        The second one represents attention.
+        The shape is (the length of the longest tensor in `x`, num of `x`).
         """
         if self.pre_sorted:
             return self._forward(x)

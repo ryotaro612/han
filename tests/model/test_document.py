@@ -1,4 +1,5 @@
 import unittest
+import torch
 import torch.utils.data as da
 import han.model.document as d
 import tests.marker as marker
@@ -6,6 +7,26 @@ import tests.ag_news as ag
 
 
 class DocumentModelTestCase(unittest.TestCase):
+    def test_forward(self):
+
+        sut = d.DocumentModel(10)
+        x, word_alpha, sentence_alpha = sut(
+            [
+                [torch.Tensor([2])],
+                [torch.Tensor([1, 2, 3]), torch.Tensor([2, 1])],
+                [
+                    torch.Tensor([1, 2, 3]),
+                    torch.Tensor([1]),
+                    torch.Tensor([2, 1]),
+                ],
+                [
+                    torch.Tensor([1, 2]),
+                    torch.Tensor([1, 2, 4]),
+                    torch.Tensor([3]),
+                ],
+            ]
+        )
+
     @unittest.skipUnless(marker.run_integration_tests, marker.skip_reason)
     def test_smoke(self):
         agnews = ag.AGNewsDataset(
