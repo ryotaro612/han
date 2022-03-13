@@ -15,10 +15,10 @@ class SentenceModel(nn.Module):
     def __init__(
         self,
         vocabulary_size: int,
-        padding_idx: int = 0,
-        embedding_dim: int = 200,
-        gru_hidden_size: int = 50,
-        sentence_dim: int = 100,
+        padding_idx: t.Optional[int] = None,
+        embedding_dim: t.Optional[int] = None,
+        gru_hidden_size: t.Optional[int] = None,
+        sentence_dim: t.Optional[int] = None,
         pre_sorted: bool = True,
     ):
         """Take hyper parameters.
@@ -27,25 +27,29 @@ class SentenceModel(nn.Module):
 
         """
         super(SentenceModel, self).__init__()
-        self.padding_idx = padding_idx
+        self.padding_idx = get_default(padding_idx, 0)
+        embedding_dim = get_default(embedding_dim, 200)
+        self.gru_hidden_size = get_default(gru_hidden_size, 50)
+        self.sentence_dim = get_default(sentence_dim, 100)
         self.embedding = nn.Embedding(
             num_embeddings=vocabulary_size,
             embedding_dim=embedding_dim,
-            padding_idx=padding_idx,
+            padding_idx=self.padding_idx,
             sparse=True,
         )
         # https://pytorch.org/docs/stable/generated/torch.nn.GRU.html#gru
-        self.gru_hidden_size = gru_hidden_size
         self.gru = nn.GRU(
             input_size=embedding_dim,
             hidden_size=self.gru_hidden_size,
             bidirectional=True,
         )
-        self.sentence_dim = sentence_dim
-        self.linear = nn.Linear(self.gru_hidden_size * 2, sentence_dim)
+        self.linear = nn.Linear(self.gru_hidden_size * 2, self.sentence_dim)
         self.tanh = nn.Tanh()
-        self.context_weights = nn.Parameter(torch.Tensor(sentence_dim, 1))
+        self.context_weights = nn.Parameter(torch.Tensor(self.sentence_dim, 1))
         self.pre_sorted = pre_sorted
+
+    def _get_default(self, v, default):
+        return default if v is None else v
 
     def forward(
         self, x: list[torch.Tensor]
@@ -153,7 +157,7 @@ class SentenceClassifier(nn.Module):
         padding_idx=None,
         embedding_dim=None,
         gru_hidden_size=None,
-        output_dim=None,
+        sentence_dim=None,
         pre_sorted=None,
     ):
         """`num_of_classes' is the number of the classes.
@@ -161,32 +165,15 @@ class SentenceClassifier(nn.Module):
         It also takes the parameters that `SentenceModel` accepts.
         """
         super(SentenceClassifier, self).__init__()
-        params = dict(
-            [
-                (k, v)
-                for k, v in zip(
-                    [
-                        "vocabulary_size",
-                        "padding_idx",
-                        "embedding_dim",
-                        "gru_hidden_size",
-                        "output_dim",
-                        "pre_sorted",
-                    ],
-                    [
-                        vocabulary_size,
-                        padding_idx,
-                        embedding_dim,
-                        gru_hidden_size,
-                        output_dim,
-                        pre_sorted,
-                    ],
-                )
-                if v is not None
-            ]
+        self.han: SentenceModel = SentenceModel(
+            vocabulary_size=vocabulary_size,
+            padding_idx=padding_idx,
+            embedding_dim=embedding_dim,
+            gru_hidden_size=gru_hidden_size,
+            sentence_dim=sentence_dim,
+            pre_sorted=pre_sorted,
         )
-        self.han: SentenceModel = SentenceModel(**params)
-        self.linear = nn.Linear(self.han.output_dim, num_of_classes)
+        self.linear = nn.Linear(self.han.sentence_dim, num_of_classes)
 
     def forward(self, x: list[torch.Tensor]) -> torch.Tensor:
         """Calculate sentence vectors, and attentions.
@@ -224,3 +211,8 @@ def sort_descrease(
         order[original_index] = index
 
     return arranged, torch.Tensor(order).to(torch.int)
+
+
+def get_default(v, default):
+    """Return `default` if `v` is `None`."""
+    return default if v is None else v
