@@ -31,7 +31,7 @@ class DocumentModel(nn.Module):
                         ("padding_idx", padding_idx),
                         ("embedding_dim", embedding_dim),
                         ("gru_hidden_size", sentence_gru_hidden_size),
-                        ("output_dim", sentence_dim),
+                        ("sentence_dim", sentence_dim),
                         ("pre_sorted", False),
                     ]
                     if v is not None
@@ -39,7 +39,7 @@ class DocumentModel(nn.Module):
             )
         )
         if doc_dim is None:
-            self.doc_dim = self.sentence_model.output_dim
+            self.doc_dim = self.sentence_model.sentence_dim
         else:
             self.doc_dim = doc_dim
         if doc_gru_hidden_size is None:
@@ -47,7 +47,7 @@ class DocumentModel(nn.Module):
         else:
             self.doc_gru_hidden_size = doc_gru_hidden_size
         self.gru = nn.GRU(
-            input_size=self.sentence_model.output_dim,
+            input_size=self.sentence_model.sentence_dim,
             hidden_size=self.doc_gru_hidden_size,
             bidirectional=True,
         )

@@ -18,7 +18,7 @@ class SentenceModel(nn.Module):
         padding_idx: int = 0,
         embedding_dim: int = 200,
         gru_hidden_size: int = 50,
-        output_dim: int = 100,
+        sentence_dim: int = 100,
         pre_sorted: bool = True,
     ):
         """Take hyper parameters.
@@ -41,10 +41,10 @@ class SentenceModel(nn.Module):
             hidden_size=self.gru_hidden_size,
             bidirectional=True,
         )
-        self.output_dim = output_dim
-        self.linear = nn.Linear(self.gru_hidden_size * 2, output_dim)
+        self.sentence_dim = sentence_dim
+        self.linear = nn.Linear(self.gru_hidden_size * 2, sentence_dim)
         self.tanh = nn.Tanh()
-        self.context_weights = nn.Parameter(torch.Tensor(output_dim, 1))
+        self.context_weights = nn.Parameter(torch.Tensor(sentence_dim, 1))
         self.pre_sorted = pre_sorted
 
     def forward(
