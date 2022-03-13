@@ -126,17 +126,17 @@ class SentenceClassifierIntegrationTestCase(unittest.TestCase):
         """
         agnews_train: ag.AGNewsDataset = ag.AGNewsDatasetFactory().get_train()
         vocabulary: vo.Vocab = ag.build_ag_news_vocabulary(agnews_train)
+        pre_sorted = True
         dataloader = da.DataLoader(
             agnews_train,
             batch_size=10,
             shuffle=True,
-            collate_fn=ag.AgNewsCollateSentenceFn(vocabulary, False),
+            collate_fn=ag.AgNewsCollateSentenceFn(vocabulary, pre_sorted),
         )
-        model = m.SentenceModelClassifier(
-            len(vocabulary) + 1,  # unknown word.
-            padding_idx=0,
-            linear_output_size=100,
+        model = m.SentenceClassifier(
+            vocabulary_size=len(vocabulary) + 1,  # 1 is for unknown word.
             num_of_classes=4,
+            pre_sorted=pre_sorted,
         )
         model.train()
         loss_fn = nn.CrossEntropyLoss()
@@ -150,7 +150,7 @@ class SentenceClassifierIntegrationTestCase(unittest.TestCase):
                 dataloader
             ):
 
-                pred = model(sentences_index)
+                pred, _ = model(sentences_index)
                 loss = loss_fn(pred, labels)
                 optimizer.zero_grad()
                 loss.backward()

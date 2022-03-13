@@ -43,6 +43,7 @@ class SentenceModel(nn.Module):
             hidden_size=gru_hidden_size,
             bidirectional=True,
         )
+        self.output_dim = output_dim
         self.linear = nn.Linear(gru_hidden_size * 2, output_dim)
         self.tanh = nn.Tanh()
         self.context_weights = nn.Parameter(torch.Tensor(output_dim, 1))
@@ -157,24 +158,49 @@ class SentenceModel(nn.Module):
 
 
 class SentenceClassifier(nn.Module):
-    """Use `SentenceModel' for a multi class problem."""
+    """Use `SentenceModel` for a multi class problem."""
 
     def __init__(
         self,
-        vocabulary_size: int,
-        padding_idx: int,
-        linear_output_size: int,
         num_of_classes: int,
+        vocabulary_size,
+        padding_idx=None,
+        embedding_dim=None,
+        gru_hidden_size=None,
+        output_dim=None,
+        pre_sorted=None,
     ):
-        """`num_of_classes' is the number of the classes."""
+        """`num_of_classes' is the number of the classes.
+
+        It also takes the parameters that `SentenceModel` accepts.
+        """
         super(SentenceClassifier, self).__init__()
-        self.han: SentenceModel = SentenceModel(
-            vocabulary_size,
-            padding_idx=padding_idx,
-            output_dim=linear_output_size,
-            pre_sorted=False,
+        params = dict(
+            [
+                (k, v)
+                for k, v in zip(
+                    [
+                        "vocabulary_size",
+                        "padding_idx",
+                        "embedding_dim",
+                        "gru_hidden_size",
+                        "output_dim",
+                        "pre_sorted",
+                    ],
+                    [
+                        vocabulary_size,
+                        padding_idx,
+                        embedding_dim,
+                        gru_hidden_size,
+                        output_dim,
+                        pre_sorted,
+                    ],
+                )
+                if v is not None
+            ]
         )
-        self.linear = nn.Linear(linear_output_size, num_of_classes)
+        self.han: SentenceModel = SentenceModel(**params)
+        self.linear = nn.Linear(self.han.output_dim, num_of_classes)
 
     def forward(self, x: list[torch.Tensor]) -> torch.Tensor:
         """Calculate sentence vectors, and attentions.
@@ -183,5 +209,5 @@ class SentenceClassifier(nn.Module):
         A sentence is a tensor that each word index.
 
         """
-        x, _ = self.han(x)
-        return self.linear(x)
+        x, alpha = self.han(x)
+        return self.linear(x), alpha
