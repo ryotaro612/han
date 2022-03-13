@@ -1,5 +1,6 @@
 import unittest
 import torch
+import torch.nn as nn
 import torch.utils.data as da
 import han.model.document as d
 import tests.marker as marker
@@ -40,14 +41,35 @@ class DocumentClassifierIntegrationTestCase(unittest.TestCase):
         dataloader = da.DataLoader(
             agnews_train,
             batch_size=10,
+            shuffle=True,
             collate_fn=ag.AgNewsCollateDocumentFn(vocabulary),
         )
         model = d.DocumentClassifier(len(vocabulary) + 1, 4)
         model.train()
+        loss_fn = nn.CrossEntropyLoss()
+        total_acc = 0
+        total_count = 0
+        last_process = 0
+        optimizer = torch.optim.Adagrad(model.parameters())
         epoch = 2
         for _ in range(epoch):
-            for batch_index, () in enumerate(dataloader):
-                pass
+            for batch_index, (doc_index, labels) in enumerate(dataloader):
+                pred = model(doc_index)[0]
+                loss = loss_fn(pred, labels)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                total_acc += (pred.argmax(1) == labels).sum().item()
+                total_count += len(labels)
+                if last_process + 100 < total_count:
+                    last_process = total_count
+                    loss = loss.item()
+                    acc = total_acc / total_count
+                    print(
+                        f"loss: {loss:>7f} "
+                        f"acc: {acc:>7f} "
+                        f"{total_count:>5d}"
+                    )
 
 
 if __name__ == "__main__":

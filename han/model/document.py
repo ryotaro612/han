@@ -68,22 +68,27 @@ class DocumentClassifier(nn.Module):
         self,
         vocabulary_size: int,
         num_of_classes: int,
-        padding_idx: int = 0,
-        embedding_dim: int = 200,
-        gru_hidden_size: int = 50,
-        linear_output_dim: int = 100,
+        padding_idx=None,
+        embedding_dim=None,
+        sentence_gru_hidden_size=None,
+        sentence_dim=None,
+        doc_gru_hidden_size=None,
+        doc_dim=None,
     ):
         """Take hyper parameters."""
+        super(DocumentClassifier, self).__init__()
         self.han = DocumentModel(
             vocabulary_size=vocabulary_size,
             padding_idx=padding_idx,
             embedding_dim=embedding_dim,
-            gru_hidden_size=gru_hidden_size,
-            output_dim=linear_output_dim,
+            sentence_gru_hidden_size=sentence_gru_hidden_size,
+            sentence_dim=sentence_dim,
+            doc_gru_hidden_size=doc_gru_hidden_size,
+            doc_dim=doc_dim,
         )
-        self.linear = nn.Linear(linear_output_dim, num_of_classes)
+        self.linear = nn.Linear(self.han.doc_dim, num_of_classes)
 
     def forward(self, x: list[list[torch.Tensor]]):
         """Embbed text index into document vectors."""
-        x, _ = self.han(x)
-        return self.linear(x)
+        x, alpha, word_alpha, doc_lens = self.han(x)
+        return self.linear(x), alpha, word_alpha, doc_lens
