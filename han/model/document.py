@@ -11,35 +11,44 @@ class DocumentModel(nn.Module):
     def __init__(
         self,
         vocabulary_size: int,
-        padding_idx: int = 0,
-        embedding_dim: int = 200,
-        gru_hidden_size: int = 50,
-        output_dim: int = 100,
+        padding_idx,
+        embedding_dim,
+        gru_hidden_size,
+        output_dim,
+        doc_gru_hidden_size: t.Optional[int] = None,
     ):
         """Take hyper parameters."""
         super(DocumentModel, self).__init__()
-        self.han = s.SentenceModel(
-            vocabulary_size,
-            padding_idx,
-            embedding_dim,
-            gru_hidden_size,
-            output_dim,
+        self.sentence = s.SentenceModel(
+            **dict(
+                [
+                    (k, v)
+                    for k, v in [
+                        ("vocabulary_size", vocabulary_size),
+                        ("padding_idx", padding_idx),
+                        ("embedding_dim", embedding_dim),
+                        ("gru_hidden_size", gru_hidden_size),
+                        ("output_dim", output_dim),
+                        ("pre_sorted", False),
+                    ]
+                    if v is not None
+                ]
+            )
         )
+        self.doc_gru_hidden_size = (
+            doc_gru_hidden_size
+            if doc_gru_hidden_size
+            else self.sentence.gru_hidden_size
+        )
+
         self.gru = nn.GRU(
-            input_size=output_dim,
-            hidden_size=gru_hidden_size,
+            input_size=self.sentence.output_dim,
+            hidden_size=self.doc_gru_hidden_size,
             bidirectional=True,
         )
 
     def forward(self, x: list[list[torch.Tensor]]) -> torch.Tensor:
-        """
-
-        TODO
-        ----
-        torch.select_indexで選べる
-        sentenceの単語の並び順を強制させないで、Docの実装を単純にしたい
-
-        """
+        """ """
         alpha_placeholder = self._create_placeholder(x)
         x_placeholder = self._create_placeholder(x)
         x, order = self._arrange(x)

@@ -35,13 +35,14 @@ class SentenceModel(nn.Module):
             sparse=True,
         )
         # https://pytorch.org/docs/stable/generated/torch.nn.GRU.html#gru
+        self.gru_hidden_size = gru_hidden_size
         self.gru = nn.GRU(
             input_size=embedding_dim,
-            hidden_size=gru_hidden_size,
+            hidden_size=self.gru_hidden_size,
             bidirectional=True,
         )
         self.output_dim = output_dim
-        self.linear = nn.Linear(gru_hidden_size * 2, output_dim)
+        self.linear = nn.Linear(self.gru_hidden_size * 2, output_dim)
         self.tanh = nn.Tanh()
         self.context_weights = nn.Parameter(torch.Tensor(output_dim, 1))
         self.pre_sorted = pre_sorted
