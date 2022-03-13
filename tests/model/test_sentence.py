@@ -10,48 +10,6 @@ import tests.ag_news as ag
 
 
 class SetenceModelTestCase(unittest.TestCase):
-    def test(self):
-        sut = m.SentenceModel(10, 0)
-        u = torch.Tensor(
-            [
-                [[1, 2, 3, 1], [3, 4, 1, 2], [2, 2, 1, 3]],
-                [[5, 6, 2, 2], [7, 3, 2, 1], [3, 2, 1, 4]],
-            ]
-        )
-        self.assertEqual(torch.Size([2, 3, 4]), u.shape)
-        context = torch.Tensor([1, 1, 1, 1])
-        res = sut._mul_context_vector(u, context)
-
-        te.assert_close(res, torch.Tensor([[7, 10, 8], [15, 13, 10]]))
-
-    def test_word_softmax(self):
-        sut = m.SentenceModel(10, 0)
-        x = torch.Tensor([[1, 2], [3, 4], [5, 1]])
-        res = sut._calc_softmax(x)
-
-        te.assert_close(
-            torch.Tensor([res[0][0] + res[1][0] + res[2][0]]),
-            torch.Tensor([1]),
-        )
-
-    def test_calc_setence_vector(self):
-        alpha = torch.Tensor(
-            [[[1], [2], [3]], [[4], [5], [6]]],
-        )
-        self.assertEqual(alpha.shape, torch.Size([2, 3, 1]))
-        h = torch.Tensor(
-            [
-                [[1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1]],
-                [[1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1]],
-            ]
-        )
-        self.assertEqual(torch.Size([2, 3, 4]), h.shape)
-        sut = m.SentenceModel(10, 0)
-        res = sut._calc_sentence_vector(alpha, h)
-        te.assert_close(
-            res, torch.Tensor([[5, 5, 5, 5], [7, 7, 7, 7], [9, 9, 9, 9]])
-        )
-
     def test_pack_embeddings(self):
         a = torch.Tensor(
             [
@@ -149,43 +107,6 @@ class SentenceClassifierIntegrationTestCase(unittest.TestCase):
                         f"acc: {acc:>7f} "
                         f"{total_count:>5d}"
                     )
-
-
-class SortDescreaseTestCase(unittest.TestCase):
-    def test(self):
-        texts = [
-            torch.Tensor([1, 2]),
-            torch.Tensor([2]),
-            torch.Tensor([3, 2, 1]),
-        ]
-        res, order = m.sort_descrease(texts)
-
-        te.assert_close(
-            res,
-            [
-                torch.Tensor([3, 2, 1]),
-                torch.Tensor([1, 2]),
-                torch.Tensor([2]),
-            ],
-        )
-        te.assert_close(order, torch.Tensor([1, 2, 0]).to(torch.int))
-
-    def test_text_is2d(self):
-        texts = [
-            torch.Tensor([[1, 2, 3]]),
-            torch.Tensor([[1, 2], [2, 3]]),
-            torch.Tensor([[2], [2], [1]]),
-        ]
-        res, order = m.sort_descrease(texts)
-        te.assert_close(
-            res,
-            [
-                torch.Tensor([[2], [2], [1]]),
-                torch.Tensor([[1, 2], [2, 3]]),
-                torch.Tensor([[1, 2, 3]]),
-            ],
-        )
-        te.assert_close(order, torch.Tensor([2, 1, 0]).to(torch.int))
 
 
 if __name__ == "__main__":

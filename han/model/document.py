@@ -23,28 +23,16 @@ class DocumentModel(nn.Module):
         """Take hyper parameters."""
         super(DocumentModel, self).__init__()
         self.sentence_model = s.SentenceModel(
-            **dict(
-                [
-                    (k, v)
-                    for k, v in [
-                        ("vocabulary_size", vocabulary_size),
-                        ("padding_idx", padding_idx),
-                        ("embedding_dim", embedding_dim),
-                        ("gru_hidden_size", sentence_gru_hidden_size),
-                        ("sentence_dim", sentence_dim),
-                    ]
-                    if v is not None
-                ]
-            )
+            vocabulary_size=vocabulary_size,
+            padding_idx=padding_idx,
+            embedding_dim=embedding_dim,
+            gru_hidden_size=sentence_gru_hidden_size,
+            sentence_dim=sentence_dim,
         )
-        if doc_dim is None:
-            self.doc_dim = self.sentence_model.sentence_dim
-        else:
-            self.doc_dim = doc_dim
-        if doc_gru_hidden_size is None:
-            self.doc_gru_hidden_size = self.sentence_model.gru_hidden_size
-        else:
-            self.doc_gru_hidden_size = doc_gru_hidden_size
+        self.doc_dim = s.get_default(doc_dim, self.sentence_model.sentence_dim)
+        self.doc_gru_hidden_size = s.get_default(
+            doc_gru_hidden_size, self.sentence_model.gru_hidden_size
+        )
         self.gru = nn.GRU(
             input_size=self.sentence_model.sentence_dim,
             hidden_size=self.doc_gru_hidden_size,

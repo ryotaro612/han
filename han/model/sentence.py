@@ -52,12 +52,12 @@ class SentenceModel(nn.Module):
     ) -> t.Tuple[torch.Tensor, torch.Tensor]:
         """Calculate sentence vectors, and attentions.
 
-        `x` is a list of index sentences.
-        Return a tuple of two tensors.  The first one that it
-        transformed x to, and its shape is
-        (num of `x`, `self.output_dim`)
-        The second one represents attention.
-        The shape is (the length of the longest tensor in `x`, num of `x`).
+        `x` is a list of index sentences.  Return a tuple of two
+        tensors.  The first one that it transformed x to, and its
+        shape is (num of `x`, `self.output_dim`) The second one
+        represents attention.  The shape is (the length of the longest
+        tensor in `x`, num of `x`).
+
         """
         lengths = self._get_lengths(x)
         # x.shape is (longest length, batch size)
@@ -89,44 +89,9 @@ class SentenceModel(nn.Module):
         """
         return r.pack_padded_sequence(x, lengths, enforce_sorted=False)
 
-    def _mul_context_vector(
-        self, u: torch.Tensor, context_param: torch.Tensor
-    ):
-        """Calulate arguments for softmax.
-
-        The shape of u is
-        (the number of words in a sentence, batch size, dimention of word)
-        The number of words contains padding.
-        The shape of context_param is (dimention of word).
-        Return (the number of words in a sentence, batch size).
-
-        """
-        return torch.matmul(u, context_param)
-
-    def _calc_softmax(self, x: torch.Tensor):
-        """Calculate softmax.
-
-        The shape of x is (the number of words in a sentence, word dimension).
-        Return the tensor with (the number of words) shape.
-
-        """
-        return nn.Softmax(dim=0)(x)
-
-    def _calc_sentence_vector(self, alpha: torch.Tensor, h: torch.Tensor):
-        """Calculate word or doc vector.
-
-        The shape of alpha is
-        (the number of words or senteces, batch size, 1).
-
-        The shape of h is
-        (the number of words or sentences, batch size, dimention).
-
-        """
-        return torch.sum(torch.mul(alpha.expand_as(h), h), 0)
-
 
 class SentenceClassifier(nn.Module):
-    """Use `SentenceModel` for a multi class problem."""
+    """Use `SentenceModel` for a multi class text classification."""
 
     def __init__(
         self,
@@ -161,33 +126,6 @@ class SentenceClassifier(nn.Module):
         """
         x, alpha = self.han(x)
         return self.linear(x), alpha
-
-
-def sort_descrease(
-    x: list[torch.Tensor],
-) -> t.Tuple[list[torch.Tensor], torch.Tensor]:
-    """Sort a list of tensors in a descreasing order.
-
-    Sort a list of tensors in the descreasing order of the length of
-    each tensor.
-
-    Return the sorted x and a tensor of index.  The item in the second
-    item represents the index of `x` to revert the order.
-
-
-    """
-    x: list[t.Tuple[int, torch.Tensor]] = sorted(
-        [(index, sentence) for index, sentence in enumerate(x)],
-        key=lambda e: len(e[1]),
-        reverse=True,
-    )
-    order = [None] * len(x)
-    arranged = [None] * len(x)
-    for index, (original_index, item) in enumerate(x):
-        arranged[index] = item
-        order[original_index] = index
-
-    return arranged, torch.Tensor(order).to(torch.int)
 
 
 def get_default(v, default):

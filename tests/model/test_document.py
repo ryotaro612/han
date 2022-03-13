@@ -38,47 +38,6 @@ class DocumentModelTestCase(unittest.TestCase):
         )
         self.assertEqual(sentence_alpha.shape, torch.Size([3, 4]))
 
-    @unittest.skipUnless(marker.run_integration_tests, marker.skip_reason)
-    def test_smoke(self):
-        agnews = ag.AGNewsDataset(
-            [
-                (
-                    0,
-                    [
-                        "blue",
-                        ".",
-                    ],
-                ),
-                (1, ["quick", "brown", "fox", ".", "jumps"]),
-                (
-                    2,
-                    [
-                        "fish",
-                        "tasty",
-                        "brown",
-                        "fish",
-                        ".",
-                        "coke",
-                        "tasty",
-                        "coffee",
-                        "coffee",
-                        "cake",
-                        ".",
-                    ],
-                ),
-            ]
-        )
-        vocabulary = ag.build_ag_news_vocabulary(agnews)
-
-        dataloader = da.DataLoader(
-            agnews,
-            batch_size=3,
-            collate_fn=ag.AgNewsCollateDocumentFn(vocabulary),
-        )
-        model = d.DocumentModel(len(vocabulary) + 1)
-        for documents, _ in dataloader:
-            model(documents)
-
 
 @unittest.skipUnless(marker.run_integration_tests, marker.skip_reason)
 class DocumentClassifierIntegrationTestCase(unittest.TestCase):
