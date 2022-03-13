@@ -23,11 +23,7 @@ class SentenceModel(nn.Module):
     ):
         """Take hyper parameters.
 
-        vocabulary size should count the padding indice.
-
-        References
-        ----------
-        https://pytorch.org/docs/stable/generated/torch.nn.GRU.html#gru
+        `vocabulary_size` should count the padding indice.
 
         """
         super(SentenceModel, self).__init__()
@@ -38,6 +34,7 @@ class SentenceModel(nn.Module):
             padding_idx=padding_idx,
             sparse=True,
         )
+        # https://pytorch.org/docs/stable/generated/torch.nn.GRU.html#gru
         self.gru = nn.GRU(
             input_size=embedding_dim,
             hidden_size=gru_hidden_size,
@@ -54,8 +51,8 @@ class SentenceModel(nn.Module):
     ) -> t.Tuple[torch.Tensor, torch.Tensor]:
         """Calculate sentence vectors, and attentions.
 
-        `x` is a list of index sentences.
-        `x` should be in the descreasing order of length.
+        `x` is a list of index sentences.  `x` should be in the
+        descreasing order of length if `self.pre_sorted` is `True`.
 
         """
         if self.pre_sorted:
