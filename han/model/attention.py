@@ -7,8 +7,14 @@ import torch.nn as nn
 class AttentionModel(nn.Module):
     """Attenion layers."""
 
-    def __init__(self, input_dim: int, output_dim: int = 100):
-        """Take hyper parameters."""
+    def __init__(self, input_dim: int, output_dim: t.Optional[int] = None):
+        """Take hyper parameters.
+
+        The default value of `output_dim` is 100.
+
+        """
+        if output_dim is None:
+            output_dim = 100
         super(AttentionModel, self).__init__()
         self.linear = nn.Linear(input_dim, output_dim)
         self.tanh = nn.Tanh()

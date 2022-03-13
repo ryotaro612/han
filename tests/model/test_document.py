@@ -26,6 +26,17 @@ class DocumentModelTestCase(unittest.TestCase):
                 ],
             ]
         )
+        self.assertEqual(x.shape, torch.Size([4, sut.doc_dim]))
+        self.assertEqual(
+            [e.shape for e in word_alpha],
+            [
+                torch.Size([3, 1]),
+                torch.Size([3, 2]),
+                torch.Size([3, 3]),
+                torch.Size([3, 3]),
+            ],
+        )
+        self.assertEqual(sentence_alpha.shape, torch.Size([3, 4]))
 
     @unittest.skipUnless(marker.run_integration_tests, marker.skip_reason)
     def test_smoke(self):
