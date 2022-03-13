@@ -83,8 +83,13 @@ class AgNewsCollateDocumentFn:
 
     def __call__(
         self, batch: list[t.Tuple[int, list[str]]]
-    ) -> t.Tuple[list[list[list[int]]], torch.Tensor]:
-        """Return indexed documents and labels."""
+    ) -> t.Tuple[list[list[torch.Tensor]], torch.Tensor]:
+        """Return indexed documents and labels.
+
+        Return a tuple. The first item is documents. The second item
+        is labels.
+
+        """
         labels: torch.Tensor = torch.Tensor([item[0] for item in batch]).to(
             torch.long
         )

@@ -10,7 +10,7 @@ class DocumentModelTestCase(unittest.TestCase):
     def test_forward(self):
 
         sut = d.DocumentModel(10)
-        x, word_alpha, sentence_alpha = sut(
+        x, sentence_alpha, word_alpha, doc_lens = sut(
             [
                 [torch.Tensor([2])],
                 [torch.Tensor([1, 2, 3]), torch.Tensor([2, 1])],
@@ -27,16 +27,9 @@ class DocumentModelTestCase(unittest.TestCase):
             ]
         )
         self.assertEqual(x.shape, torch.Size([4, sut.doc_dim]))
-        self.assertEqual(
-            [e.shape for e in word_alpha],
-            [
-                torch.Size([3, 1]),
-                torch.Size([3, 2]),
-                torch.Size([3, 3]),
-                torch.Size([3, 3]),
-            ],
-        )
         self.assertEqual(sentence_alpha.shape, torch.Size([3, 4]))
+        self.assertEqual(word_alpha.shape, torch.Size([3, 9]))
+        self.assertEqual(doc_lens, [1, 2, 3, 3])
 
 
 @unittest.skipUnless(marker.run_integration_tests, marker.skip_reason)

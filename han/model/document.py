@@ -42,7 +42,9 @@ class DocumentModel(nn.Module):
             self.doc_gru_hidden_size * 2, output_dim=self.doc_dim
         )
 
-    def forward(self, x: list[list[torch.Tensor]]) -> torch.Tensor:
+    def forward(
+        self, x: list[list[torch.Tensor]]
+    ) -> t.Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Take a document index."""
         sentences = [sentence for document in x for sentence in document]
         doc_lens = [len(doc) for doc in x]
@@ -54,9 +56,9 @@ class DocumentModel(nn.Module):
         x = rnn.pack_padded_sequence(x, doc_lens, enforce_sorted=False)
         x = self.gru(x)[0]
         # The shape of x is (max num of sentence, num of docs, dim)
-        x, _ = rnn.pad_packed_sequence(x)
+        x = rnn.pad_packed_sequence(x)[0]
         x, alpha = self.attention_model(x)
-        return x, torch.split(word_alpha, doc_lens, dim=1), alpha
+        return x, alpha, word_alpha, doc_lens
 
 
 class DocumentClassifier(nn.Module):
