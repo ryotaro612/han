@@ -32,7 +32,6 @@ class DocumentModel(nn.Module):
                         ("embedding_dim", embedding_dim),
                         ("gru_hidden_size", sentence_gru_hidden_size),
                         ("sentence_dim", sentence_dim),
-                        ("pre_sorted", False),
                     ]
                     if v is not None
                 ]

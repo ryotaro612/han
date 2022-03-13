@@ -3,6 +3,7 @@ import typing as t
 import torch
 import torch.nn as nn
 import torch.nn.utils.rnn as r
+from . import attention as a
 
 
 class SentenceModel(nn.Module):
@@ -19,7 +20,6 @@ class SentenceModel(nn.Module):
         embedding_dim: t.Optional[int] = None,
         gru_hidden_size: t.Optional[int] = None,
         sentence_dim: t.Optional[int] = None,
-        pre_sorted: bool = True,
     ):
         """Take hyper parameters.
 
@@ -43,54 +43,32 @@ class SentenceModel(nn.Module):
             hidden_size=self.gru_hidden_size,
             bidirectional=True,
         )
-        self.linear = nn.Linear(self.gru_hidden_size * 2, self.sentence_dim)
-        self.tanh = nn.Tanh()
-        self.context_weights = nn.Parameter(torch.Tensor(self.sentence_dim, 1))
-        self.pre_sorted = pre_sorted
-
-    def _get_default(self, v, default):
-        return default if v is None else v
+        self.attention_model = a.AttentionModel(
+            self.gru_hidden_size * 2, self.sentence_dim
+        )
 
     def forward(
         self, x: list[torch.Tensor]
     ) -> t.Tuple[torch.Tensor, torch.Tensor]:
         """Calculate sentence vectors, and attentions.
 
-        `x` is a list of index sentences.  `x` should be in the
-        descreasing order of length if `self.pre_sorted` is `True`.
+        `x` is a list of index sentences.
         Return a tuple of two tensors.  The first one that it
         transformed x to, and its shape is
         (num of `x`, `self.output_dim`)
         The second one represents attention.
         The shape is (the length of the longest tensor in `x`, num of `x`).
         """
-        if self.pre_sorted:
-            return self._forward(x)
-
-        x, order = sort_descrease(x)
-        x, alpha = self._forward(x)
-        x = torch.index_select(input=x, dim=0, index=order)
-        alpha = torch.index_select(input=alpha, dim=1, index=order)
-        return x, alpha
-
-    def _forward(self, x: list[torch.Tensor]):
         lengths = self._get_lengths(x)
         # x.shape is (longest length, batch size)
         x = self._pad_sequence(x)
         # x.shape is (longest length, batch size, embedding dim)
         x: torch.Tensor = self.embedding(x)
         x: r.PackedSequence = self._pack_embeddings(x, lengths)
-        h: torch.Tensor = self.gru(x)[0]
-        del x
+        x: torch.Tensor = self.gru(x)[0]
         # Linear cannot accept any packed sequences.
-        h, _ = r.pad_packed_sequence(h)
-        u: torch.Tensor = self.tanh(self.linear(h))
-        u = self._mul_context_vector(u, self.context_weights)
-        alpha = self._calc_softmax(u)
-        del u
-        x = self._calc_sentence_vector(alpha, h)
-        alpha = torch.squeeze(alpha, dim=2)
-        return x, alpha
+        x, _ = r.pad_packed_sequence(x)
+        return self.attention_model(x)
 
     def _get_lengths(self, x: list[torch.Tensor]) -> list[int]:
         """Get the lengths of each item."""
@@ -105,11 +83,11 @@ class SentenceModel(nn.Module):
     ) -> r.PackedSequence:
         """Pack padded and embedded words.
 
-        The shape of x is
+        The shape of `x` is
         (the longest length of the sentences, batch size, embedding dim).
 
         """
-        return r.pack_padded_sequence(x, lengths)
+        return r.pack_padded_sequence(x, lengths, enforce_sorted=False)
 
     def _mul_context_vector(
         self, u: torch.Tensor, context_param: torch.Tensor
@@ -153,16 +131,16 @@ class SentenceClassifier(nn.Module):
     def __init__(
         self,
         num_of_classes: int,
-        vocabulary_size,
+        vocabulary_size: int,
         padding_idx=None,
         embedding_dim=None,
         gru_hidden_size=None,
         sentence_dim=None,
-        pre_sorted=None,
     ):
         """`num_of_classes' is the number of the classes.
 
         It also takes the parameters that `SentenceModel` accepts.
+
         """
         super(SentenceClassifier, self).__init__()
         self.han: SentenceModel = SentenceModel(
@@ -171,7 +149,6 @@ class SentenceClassifier(nn.Module):
             embedding_dim=embedding_dim,
             gru_hidden_size=gru_hidden_size,
             sentence_dim=sentence_dim,
-            pre_sorted=pre_sorted,
         )
         self.linear = nn.Linear(self.han.sentence_dim, num_of_classes)
 
