@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.utils.data as da
 import han.model.document as d
 import tests.marker as marker
-import tests.ag_news as ag
+import han.example.ag_news as ag
 
 
 class DocumentModelTestCase(unittest.TestCase):

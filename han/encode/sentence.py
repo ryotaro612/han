@@ -15,13 +15,13 @@ class SentenceEncodeProtocol(typing.Protocol):
 class SentenceEncoder:
     """Implement `SentenceEncodeProtocol`."""
 
-    def __init__(self, vocab: v.Vocab):
+    def __init__(self, vocab: v.Vocab, tokenizer: t.Tokenizer = t.Tokenizer()):
         """`vocab` has vocabulary."""
         self._vocab = vocab
-        self._tokenizer = t.Tokenizer()
+        self.tokenizer = tokenizer
 
     def forward(self, texts: list[str]) -> list[torch.Tensor]:
         """Implement `forward`."""
         return [
-            torch.Tensor(self._vocab(self._tokenizer(text))) for text in texts
+            torch.Tensor(self._vocab(self.tokenizer(text))) for text in texts
         ]

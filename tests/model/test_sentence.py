@@ -6,7 +6,7 @@ import torch.utils.data as da
 import torchtext.vocab as vo
 import han.model.sentence as m
 import tests.marker as marker
-import tests.ag_news as ag
+import han.example.ag_news as ag
 
 
 class SetenceModelTestCase(unittest.TestCase):

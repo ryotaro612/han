@@ -2,6 +2,7 @@
 import typing as t
 import torch
 import torchtext.datasets as data
+import torchtext.data as tdata
 import torch.utils.data as da
 import torchtext.vocab as vo
 from .. import vocabulary as v
@@ -28,6 +29,10 @@ class AGNewsDataset(da.Dataset):
 
         """
         self.raw_dataset = raw_dataset
+
+    def num_of_classes(self) -> int:
+        """Return the number of labels."""
+        return len(set([i for i, _ in self.raw_dataset]))
 
     def __len__(self) -> int:
         """Return the number of items."""
@@ -65,7 +70,7 @@ class AgNewsCollateSentenceFn:
 
         return self._encoder.forward(
             [text for _, text in batch]
-        ), torch.Tensor([label - 1 for label, _ in batch]).to(torch.int)
+        ), torch.Tensor([label - 1 for label, _ in batch]).to(torch.long)
 
 
 class AgNewsCollateDocumentFn:
@@ -90,7 +95,7 @@ class AgNewsCollateDocumentFn:
         """
         labels: torch.Tensor = torch.Tensor(
             [item[0] - 1 for item in batch]
-        ).to(torch.int)
+        ).to(torch.long)
         return self._encoder.forward([text for _, text in batch]), labels
 
 
@@ -117,7 +122,10 @@ class AGNewsDatasetFactory:
 
 
 def build_ag_news_vocabulary(
-    agnews: AGNewsDataset, tokenizer: t.Callable[[str], list[str]]
+    agnews: AGNewsDataset,
+    tokenizer: t.Callable[[str], list[str]] = tdata.get_tokenizer(
+        "basic_english"
+    ),
 ) -> vo.Vocab:
     """Learn the vocabulary of `agnews`."""
     return v.build_vocabulary((tokenizer(doc) for _, doc in agnews))

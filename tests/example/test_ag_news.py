@@ -33,7 +33,7 @@ class AgNewsCollateSentenceFnTestCase(unittest.TestCase):
             self.assertEqual(sentence_index[0].shape, torch.Size([3]))
             self.assertEqual(sentence_index[1].shape, torch.Size([2]))
             self.assertEqual(sentence_index[2].shape, torch.Size([1]))
-            tt.assert_close(labels, torch.Tensor([1, 2, 0]).to(torch.int))
+            tt.assert_close(labels, torch.Tensor([1, 2, 0]).to(torch.long))
 
 
 class AgNewsCollateDocumentFnTestCase(unittest.TestCase):
@@ -68,7 +68,7 @@ class AgNewsCollateDocumentFnTestCase(unittest.TestCase):
                 ],
             ],
         )
-        tt.assert_close(labels, torch.Tensor([1, 0, 2]).to(torch.int))
+        tt.assert_close(labels, torch.Tensor([1, 0, 2]).to(torch.long))
 
 
 class BuildAgNewsVocabularyTestCase(unittest.TestCase):
