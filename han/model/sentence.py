@@ -102,7 +102,7 @@ class SentenceClassifier(nn.Module):
         gru_hidden_size=None,
         sentence_dim=None,
     ):
-        """`num_of_classes' is the number of the classes.
+        """`num_of_classes` is the number of the classes.
 
         It also takes the parameters that `SentenceModel` accepts.
 

@@ -9,7 +9,7 @@ def build_vocabulary(
 ) -> v.Vocab:
     """Build vocabulary.
 
-    Each element of `sentence` is a list of words.
+    Each element of `sentences` is a list of words.
 
     """
     vocab: v.Vocab = v.build_vocab_from_iterator(
