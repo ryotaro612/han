@@ -6,7 +6,7 @@ import han.encode.sentence as s
 class SentenceEncoderTestCase(unittest.TestCase):
     def test(self):
         vocab = v.build_vocab_from_iterator([["apple", "is", "tasty"]])
-        print(vocab.get_stoi())
+
         sut = s.SentenceEncoder(vocab)
 
         res = sut.forward(["apple is tasty", "tasty is apple"])
