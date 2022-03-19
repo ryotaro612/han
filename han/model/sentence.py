@@ -18,6 +18,7 @@ class SentenceModel(nn.Module):
         vocabulary_size: int,
         padding_idx: t.Optional[int] = None,
         embedding_dim: t.Optional[int] = None,
+        embedding_sparse: t.Optional[bool] = None,
         gru_hidden_size: t.Optional[int] = None,
         sentence_dim: t.Optional[int] = None,
     ):
@@ -31,11 +32,13 @@ class SentenceModel(nn.Module):
         embedding_dim = get_default(embedding_dim, 200)
         self.gru_hidden_size = get_default(gru_hidden_size, 50)
         self.sentence_dim = get_default(sentence_dim, 100)
+        if embedding_sparse is None:
+            embedding_sparse = True
         self.embedding = nn.Embedding(
             num_embeddings=vocabulary_size,
             embedding_dim=embedding_dim,
             padding_idx=self.padding_idx,
-            sparse=True,
+            sparse=embedding_sparse,
         )
         # https://pytorch.org/docs/stable/generated/torch.nn.GRU.html#gru
         self.gru = nn.GRU(
@@ -70,6 +73,13 @@ class SentenceModel(nn.Module):
         x, _ = r.pad_packed_sequence(x)
         return self.attention_model(x)
 
+    def sparse_dense_parameters(
+        self,
+    ) -> t.Tuple[list[nn.parameter.Parameter], list[nn.parameter.Parameter]]:
+        """Return the parameters for sparse and dense parameters."""
+        sparse = list(self.embedding.parameters())[0]
+        return [sparse], [p for p in self.parameters() if p is not sparse]
+
     def _get_lengths(self, x: list[torch.Tensor]) -> list[int]:
         """Get the lengths of each item."""
         return [e.size()[0] for e in x]
@@ -98,6 +108,7 @@ class SentenceClassifier(nn.Module):
         num_of_classes: int,
         vocabulary_size: int,
         padding_idx=None,
+        embedding_sparse=None,
         embedding_dim=None,
         gru_hidden_size=None,
         sentence_dim=None,
@@ -112,6 +123,7 @@ class SentenceClassifier(nn.Module):
             vocabulary_size=vocabulary_size,
             padding_idx=padding_idx,
             embedding_dim=embedding_dim,
+            embedding_sparse=embedding_sparse,
             gru_hidden_size=gru_hidden_size,
             sentence_dim=sentence_dim,
         )
@@ -126,6 +138,17 @@ class SentenceClassifier(nn.Module):
         """
         x, alpha = self.han(x)
         return self.linear(x), alpha
+
+    def sparse_dense_parameters(
+        self,
+    ) -> t.Tuple[list[nn.parameter.Parameter], list[nn.parameter.Parameter]]:
+        """Return the parameters for sparse and dense parameters.
+
+        The first one for sparse, the second is for dense.
+
+        """
+        sparse = list(self.han.embedding.parameters())[0]
+        return [sparse], [p for p in self.parameters() if p is not sparse]
 
 
 def get_default(v, default):

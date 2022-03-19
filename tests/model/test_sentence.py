@@ -10,6 +10,11 @@ import han.example.ag_news as ag
 
 
 class SetenceModelTestCase(unittest.TestCase):
+    def test_sparse(self):
+        sut = m.SentenceModel(10, 0)
+        sparse, dense = sut.sparse_dense_parameters()
+        self.assertEqual(len(sparse), 1)
+
     def test_pack_embeddings(self):
         a = torch.Tensor(
             [
