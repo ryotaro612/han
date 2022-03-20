@@ -5,7 +5,7 @@ import torchtext.vocab as v
 
 def build_vocabulary(
     sentences: t.Iterator[t.Iterator[str]],
-    unknown_index: int = -1,
+    unknown_index: int = 0,
 ) -> v.Vocab:
     """Build vocabulary.
 

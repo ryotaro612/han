@@ -11,26 +11,34 @@ from ..model import sentence as se
 
 def train_agnews_classifier(model_path: str, encoder_path: str):
     """Fit a `SentenceClassifier` on AG News."""
-    agnews_train: ag.AGNewsDataset = ag.AGNewsDatasetFactory().get_train(
-        limit=2000
-    )
+    agnews_factory = ag.AGNewsDatasetFactory()
+    agnews_train: ag.AGNewsDataset = agnews_factory.get_train(limit=2000)
+    agnews_test = agnews_factory.get_test(limit=2000)
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     tokenizer = token.Tokenizer()
     vocabulary = ag.build_ag_news_vocabulary(agnews_train, tokenizer)
     encoder = s.SentenceEncoder(vocab=vocabulary, tokenizer=tokenizer)
     # torch.save(encoder, encoder_path)
-    dataloader = da.DataLoader(
+    train_dataloader = da.DataLoader(
         agnews_train,
         batch_size=10,
         shuffle=True,
         collate_fn=ag.AgNewsCollateSentenceFn(encoder, False),
     )
+    test_dataloader = da.DataLoader(
+        agnews_test,
+        batch_size=1,
+        collate_fn=ag.AgNewsCollateSentenceFn(encoder, False),
+    )
+
     num_classes = agnews_train.num_of_classes()
     model = se.SentenceClassifier(
         num_of_classes=num_classes,
         vocabulary_size=len(vocabulary) + 1,
-    )
+    ).to(device)
     model.train()
-    loss_fn = nn.CrossEntropyLoss()
+    loss_fn = nn.CrossEntropyLoss().to(device)
     sparse_params, dense_params = model.sparse_dense_parameters()
     dense_optimizer = torch.optim.Adam(dense_params)
     sparse_optimizer = torch.optim.SparseAdam(sparse_params)
@@ -51,10 +59,12 @@ def train_agnews_classifier(model_path: str, encoder_path: str):
             metrics.F1Score(num_classes=num_classes, average="macro"),
         ]
     )
+    me.to(device)
     # average_precision = metrics.AveragePrecision(num_classes)
     for _ in range(epoch):
-        for sentences, labels in dataloader:
-            pred, _ = model(sentences)
+        for sentences, labels in train_dataloader:
+            labels = labels.to(device)
+            pred, _ = model([sentence.to(device) for sentence in sentences])
             sparse_optimizer.zero_grad()
             dense_optimizer.zero_grad()
             loss = loss_fn(pred, labels)
@@ -83,6 +93,22 @@ def train_agnews_classifier(model_path: str, encoder_path: str):
         # average_precision.reset()
         sparse_scheduler.step()
         dense_scheduler.step()
+        me = me.to("cpu")
+        model = model.to("cpu")
+
+        with torch.no_grad():
+            model.eval()
+
+            for sentences, labels in test_dataloader:
+                print(sentences)
+                preds = model([sentence for sentence in sentences])[0]
+
+                me(preds.argmax(1), labels)
+
+            print(me.compute())
+            me.reset()
+            model.train()
+        print("Done")
 
 
 if __name__ == "__main__":
