@@ -135,7 +135,7 @@ class AgNewsTrainer:
             f"{title}: "
             f"Accuracy {metrics['Accuracy']:<.3f}, "
             f"Precision {metrics['Precision']:<.3f}, "
-            f"Recanll {metrics['Recall']:<.3f}, "
+            f"Recall {metrics['Recall']:<.3f}, "
             f"F1 {metrics['F1Score']:<.3f}"
         )
 
