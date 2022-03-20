@@ -57,6 +57,21 @@ class SetenceModelTestCase(unittest.TestCase):
         )
 
 
+class SentenceClassifierTestCase(unittest.TestCase):
+    def test_softmax(self):
+        sut = m.SentenceClassifier(4, 30)
+
+        sut.eval()
+        with torch.no_grad():
+            res = sut([torch.Tensor([1, 2, 3]), torch.Tensor([1])])[0]
+            te.assert_close(
+                torch.sum(res[0, :]), torch.tensor(1).to(torch.float)
+            )
+            te.assert_close(
+                torch.sum(res[1, :]), torch.tensor(1).to(torch.float)
+            )
+
+
 @unittest.skipUnless(marker.run_integration_tests, marker.skip_reason)
 class SentenceClassifierIntegrationTestCase(unittest.TestCase):
     def test(self):

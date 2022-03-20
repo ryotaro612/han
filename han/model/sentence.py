@@ -137,7 +137,11 @@ class SentenceClassifier(nn.Module):
 
         """
         x, alpha = self.han(x)
-        return self.linear(x), alpha
+        x = self.linear(x)
+        if self.training:
+            return x, alpha
+        else:
+            return nn.functional.softmax(x, dim=1), alpha
 
     def sparse_dense_parameters(
         self,

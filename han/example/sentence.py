@@ -9,6 +9,17 @@ from .. import token
 from ..model import sentence as se
 
 
+class AgNewsTrainer:
+    """Implement common steps to train classifiers."""
+
+    def __init__(self):
+
+        ...
+
+    def train(self):
+        ...
+
+
 def train_agnews_classifier(model_path: str, encoder_path: str):
     """Fit a `SentenceClassifier` on AG News."""
     agnews_factory = ag.AGNewsDatasetFactory()
