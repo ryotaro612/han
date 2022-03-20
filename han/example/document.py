@@ -1,32 +1,27 @@
-"""Illustrate usage of `SentenceClassifier`."""
+"""Illustrate usage of `DocumentClassifier`."""
 import typing as t
 import torch.nn as nn
 import torchtext.vocab as v
+from ..encode import document as denc
 from ..example import ag_news as ag
-from ..encode import sentence as s
-from ..model import sentence as se
-from . import model as m
 
 
 def train(encoder_path: str, model_path: str):
-    """Fit a model on AG News."""
-    m.AgNewsTrainer(_SentenceTrainImpl(), m.select_device()).train(
-        encoder_path, model_path
-    )
+    """Fit a `DocumentClassifier` on AG News."""
 
 
-class _SentenceTrainImpl:
+class _DocumentTrainImpl:
     """Implement `TrainProtocol`."""
 
     def create_encoder(
         self, vocabulary: v.Vocab, tokenizer: t.Callable[[str], list[str]]
-    ) -> s.SentenceEncodeProtocol:
+    ) -> denc.DocumentEncodeProtocol:
         """Implement the protocol."""
-        return s.SentenceEncoder(vocab=vocabulary, tokenizer=tokenizer)
+        return denc.DocumentEncoder(vocabulary)
 
     def create_collate_fn(self, encoder) -> ag.AgNewsCollateSentenceFn:
         """Impl the protocol."""
-        return ag.AgNewsCollateSentenceFn(encoder, False)
+        return ag.AgNewsCollateDocumentFn(encoder)
 
     def create_model(
         self, num_classes: int, vocabulary_size: int

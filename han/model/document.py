@@ -60,6 +60,16 @@ class DocumentModel(nn.Module):
         x, alpha = self.attention_model(x)
         return x, alpha, word_alpha, doc_lens
 
+    def sparse_dense_parameters(
+        self,
+    ) -> t.Tuple[list[nn.parameter.Parameter], list[nn.parameter.Parameter]]:
+        """Return the parameters for sparse and dense parameters."""
+        sparse: list[
+            nn.Parameter
+        ] = self.sentence_model.sparse_dense_parameters()[0]
+
+        return sparse, [p for p in self.parameters() if p is not sparse[0]]
+
 
 class DocumentClassifier(nn.Module):
     """Classification."""

@@ -173,3 +173,11 @@ class _CompositeScheduler:
     def step(self):
         for scheduler in self._schedulers:
             scheduler.step()
+
+
+def select_device() -> torch.device:
+    """Select a device."""
+    if torch.cuda.is_available():
+        return torch.device(f"cuda:{torch.cuda.current_device()}")
+    else:
+        return torch.device("cpu")
