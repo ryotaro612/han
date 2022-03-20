@@ -1,4 +1,5 @@
 """Illustrate usage of `SentenceClassifier`."""
+import typing as t
 import torch
 import torch.nn as nn
 import torch.utils.data as da
@@ -13,11 +14,25 @@ class AgNewsTrainer:
     """Implement common steps to train classifiers."""
 
     def __init__(self):
-
         ...
 
-    def train(self):
-        ...
+    def train_sentence(
+        self, encoder_path: t.Optional[str], model_path: t.Optional[str]
+    ):
+        """Fit a model on AG News."""
+
+    def _create_sentence_encoder(self, encoder_path):
+        if encoder_path:
+            return torch.load(encoder_path)
+        agnews_train: ag.AGNewsDataset = ag.AGNewsDatasetFactory().get_train()
+        tokenizer = token.Tokenizer()
+        vocabulary = ag.build_ag_news_vocabulary(agnews_train, tokenizer)
+        return s.SentenceEncoder(vocab=vocabulary, tokenizer=tokenizer)
+
+    def _load_dataloders(self) -> t.Tuple[da.DataLoader, da.DataLoader]:
+        agnews_factory = ag.AGNewsDatasetFactory()
+        agnews_train: ag.AGNewsDataset = agnews_factory.get_train()
+        agnews_test = agnews_factory.get_test()
 
 
 def train_agnews_classifier(model_path: str, encoder_path: str):

@@ -82,10 +82,6 @@ class SentenceClassifierIntegrationTestCase(unittest.TestCase):
         https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html#full-implementation
         https://developers.google.com/machine-learning/guides/text-classification/step-4
 
-        loss: 0.723289 acc: 0.763470 11990
-        loss: 0.412001 acc: 0.763967 12100
-        loss: 0.617525 acc: 0.764455 12210
-
         """
         agnews_train: ag.AGNewsDataset = ag.AGNewsDatasetFactory().get_train()
         vocabulary: vo.Vocab = ag.build_ag_news_vocabulary(agnews_train)

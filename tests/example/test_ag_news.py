@@ -77,5 +77,8 @@ class BuildAgNewsVocabularyTestCase(unittest.TestCase):
         tokenizer = data.get_tokenizer("basic_english")
         vocab = ag.build_ag_news_vocabulary(news, lambda x: tokenizer(x))
         self.assertEqual(
-            set(tokenizer(news[0][1])), set(vocab.get_stoi().keys())
+            set(tokenizer(news[0][1]) + ["<pad>", "<unk>"]),
+            set(vocab.get_stoi().keys()),
         )
+
+        self.assertEqual(vocab["doge"], vocab["<unk>"])
