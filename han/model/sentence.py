@@ -66,7 +66,6 @@ class SentenceModel(nn.Module):
         # x.shape is (longest length, batch size)
         x = self._pad_sequence(x)
         # x.shape is (longest length, batch size, embedding dim)
-        print(x.shape)
         x: torch.Tensor = self.embedding(x)
         x: r.PackedSequence = self._pack_embeddings(x, lengths)
         x: torch.Tensor = self.gru(x)[0]

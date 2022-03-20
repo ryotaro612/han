@@ -88,26 +88,25 @@ def train_agnews_classifier(model_path: str, encoder_path: str):
                     f"{total_count:>5d}"
                 )
         print(me.compute())
-        # print(average_precision.compute())
         me.reset()
-        # average_precision.reset()
         sparse_scheduler.step()
         dense_scheduler.step()
-        me = me.to("cpu")
-        model = model.to("cpu")
 
         with torch.no_grad():
             model.eval()
 
             for sentences, labels in test_dataloader:
-                print(sentences)
-                preds = model([sentence for sentence in sentences])[0]
+                preds = model([sentence.to(device) for sentence in sentences])[
+                    0
+                ]
 
-                me(preds.argmax(1), labels)
+                me(preds.argmax(1), labels.to(device))
 
             print(me.compute())
             me.reset()
             model.train()
+        torch.save(model, "model.pth")
+        torch.save(encoder, "encoder.pth")
         print("Done")
 
 
