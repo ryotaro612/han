@@ -151,14 +151,14 @@ class AgNewsTrainer:
                 optimizer.step()
                 metrics(preds.argmax(1), labels)
             scheduler.step()
-            _logger.info(f"Train: {metrics.compute()}")
+            self._log("Train", metrics.compute())
             with torch.no_grad():
                 model.eval()
                 metrics.reset()
                 for sentences, labels in test_dataloader:
                     preds = model(sentences)[0]
                     metrics(preds.argmax(1), labels)
-                _logger.info(f"Test: {metrics.compute()}")
+                self._log("Test", metrics.compute())
         torch.save(model, model_path)
 
     def _create_encoder(self, encoder_path):
@@ -189,6 +189,15 @@ class AgNewsTrainer:
             collate_fn=collate_fn,
         )
         return train_dataloader, test_dataloader
+
+    def _log(self, title: str, metrics: dict):
+        _logger.info(
+            f"{title}: "
+            f"Accuracy {metrics['Accuracy']:<.3f}, "
+            f"Precision {metrics['Precision']:<.3f}, "
+            f"Recanll {metrics['Recall']:<.3f}, "
+            f"F1 {metrics['F1Score']:<.3f}"
+        )
 
 
 def train_agnews_classifier(model_path: str, encoder_path: str):
