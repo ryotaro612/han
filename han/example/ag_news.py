@@ -54,6 +54,7 @@ class AgNewsCollateSentenceFn:
         """Take an encoder."""
         self._encoder = encoder
         self._enforce_sorted = enforce_sorted
+        self._device = torch.device("cpu")
 
     def __call__(
         self, batch: list[t.Tuple[int, str]]
@@ -63,14 +64,29 @@ class AgNewsCollateSentenceFn:
         Sort the batch by the length of a sentence in a decreasing order
         if `self.enforce_sorted` is `True`.
 
-
         """
         if self._enforce_sorted:
             batch = sorted(batch, key=lambda e: len(e[1]), reverse=True)
 
-        return self._encoder.forward(
-            [text for _, text in batch]
-        ), torch.Tensor([label - 1 for label, _ in batch]).to(torch.long)
+        texts = [
+            self._allocate(text)
+            for text in self._encoder.forward([text for _, text in batch])
+        ]
+        labels = self._allocate(
+            torch.Tensor([label - 1 for label, _ in batch]).to(torch.long)
+        )
+        return texts, labels
+
+    def _allocate(self, tensor: torch.Tensor) -> torch.Tensor:
+        if tensor.device == self._device:
+            return tensor
+        else:
+            return tensor.to(self._device)
+
+    def to(self, device: torch.device) -> "AgNewsCollateSentenceFn":
+        """Make `__call__` put retured tensors on `device`."""
+        self._device = device
+        return self
 
 
 class AgNewsCollateDocumentFn:
@@ -102,8 +118,10 @@ class AgNewsCollateDocumentFn:
 class AGNewsDatasetFactory:
     """Load and tokenize AG_NEWS."""
 
-    def get_train(self, limit: int = 120000) -> AGNewsDataset:
+    def get_train(self, limit: t.Optional[int]) -> AGNewsDataset:
         """Get train data."""
+        if limit is None:
+            limit = 120000
         if limit > 120000:
             raise RuntimeError(
                 f"{limit} is greater than the number of the total train data."
@@ -111,8 +129,10 @@ class AGNewsDatasetFactory:
         train = list(data.AG_NEWS(split="train"))
         return AGNewsDataset(train[:limit])
 
-    def get_test(self, limit: int = 7600) -> AGNewsDataset:
+    def get_test(self, limit: t.Optional[int]) -> AGNewsDataset:
         """Get train data."""
+        if limit is None:
+            limit = 7600
         if limit > 7600:
             raise RuntimeError(
                 f"{limit} is greater than the number of the total test data."

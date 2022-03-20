@@ -11,6 +11,9 @@ class SentenceEncodeProtocol(typing.Protocol):
     def forward(texts: list[str]) -> list[torch.Tensor]:
         """Transform texts to tensors."""
 
+    def get_vocabulary_size(self) -> int:
+        """Return vocabulary size."""
+
 
 class SentenceEncoder:
     """Implement `SentenceEncodeProtocol`."""
@@ -25,3 +28,7 @@ class SentenceEncoder:
         return [
             torch.Tensor(self._vocab(self.tokenizer(text))) for text in texts
         ]
+
+    def get_vocabulary_size(self) -> int:
+        """Implement the protocol."""
+        return len(self._vocab)
