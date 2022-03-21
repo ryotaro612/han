@@ -1,6 +1,5 @@
 """Word embedding."""
 import typing as t
-import collections
 import torchtext.vocab as v
 import torch
 
@@ -26,7 +25,12 @@ def build_vocabulary(
 
 
 class EmbeddingProtocol(t.Protocol):
-    """Provide the format to provide trained embedding."""
+    """Provide the format to provide trained embedding.
+
+    The methods of this protocol follows `torchtext.vocab.Vectors` to
+    use it.
+
+    """
 
     @property
     def itos(self) -> list[str]:
@@ -41,7 +45,7 @@ class EmbeddingProtocol(t.Protocol):
         """
 
 
-class VocabularyProtocl(t.Protocol):
+class VocabularyProtocol(t.Protocol):
     """Map strings to index."""
 
     def forward(self, words: list[str]) -> list[int]:
@@ -49,6 +53,12 @@ class VocabularyProtocl(t.Protocol):
 
     def __getitem__(self, s: str) -> int:
         """Take a string and return its indice."""
+
+    def __call__(self, words: list[str]) -> list[int]:
+        """See `forward`."""
+
+    def __len__(self) -> int:
+        """Return the size of the vocabulary."""
 
 
 class _VocabularyImpl:
@@ -62,12 +72,18 @@ class _VocabularyImpl:
     def __getitem__(self, s: str) -> int:
         return self._dictionary.get(s, self._default_idx)
 
+    def __call__(self, words: list[str]) -> list[int]:
+        return self.forward(words)
+
+    def __len__(self) -> int:
+        return len(self._dictionary)
+
 
 def create_vocab(
     embedding: EmbeddingProtocol,
     pad_symbol: str = "<pad>",
     unknown_symbol: str = "<unk>",
-) -> t.Tuple[VocabularyProtocl, torch.Tensor]:
+) -> t.Tuple[VocabularyProtocol, torch.Tensor]:
     """Create a tensor that contains pad and unkown symbols.
 
     Bind `pad_symbol` to 0 and `unknown_symbol` to 1.
