@@ -23,7 +23,7 @@ class DocumentModel(nn.Module):
     ):
         """Take hyper parameters."""
         super(DocumentModel, self).__init__()
-        self.sentence_model = s.SentenceModel(
+        self.sentence_model = s.SentenceModelFactory().create(
             vocabulary_size=vocabulary_size,
             padding_idx=padding_idx,
             embedding_dim=embedding_dim,

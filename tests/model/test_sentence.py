@@ -5,9 +5,11 @@ import han.model.sentence as m
 
 
 class SetenceModelTestCase(unittest.TestCase):
+    def setUp(self):
+        self.sut = m.SentenceModelFactory().create(vocabulary_size=10)
+
     def test_sparse(self):
-        sut = m.SentenceModel(10, 0)
-        sparse, dense = sut.sparse_dense_parameters()
+        sparse, dense = self.sut.sparse_dense_parameters()
         self.assertEqual(len(sparse), 1)
 
     def test_pack_embeddings(self):
@@ -19,8 +21,7 @@ class SetenceModelTestCase(unittest.TestCase):
             ]
         )
         self.assertEqual(torch.Size([3, 3, 2]), a.shape)
-        sut = m.SentenceModel(10, 0)
-        res = sut._pack_embeddings(
+        res = self.sut._pack_embeddings(
             a,
             [3, 2, 1],
         )
@@ -40,13 +41,15 @@ class SetenceModelTestCase(unittest.TestCase):
         )
 
     def test_get_lengths(self):
-        sut = m.SentenceModel(10, 0)
-        res = sut._get_lengths([torch.tensor([3, 3, 3]), torch.tensor([2])])
+        res = self.sut._get_lengths(
+            [torch.tensor([3, 3, 3]), torch.tensor([2])]
+        )
         self.assertEqual(res, [3, 1])
 
     def test_pad_sequence(self):
-        sut = m.SentenceModel(10, 0)
-        res = sut._pad_sequence([torch.tensor([3, 3, 3]), torch.tensor([2])])
+        res = self.sut._pad_sequence(
+            [torch.tensor([3, 3, 3]), torch.tensor([2])]
+        )
         te.assert_close(
             res, torch.tensor([[3, 2], [3, 0], [3, 0]]).to(torch.int)
         )

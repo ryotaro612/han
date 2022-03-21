@@ -15,40 +15,29 @@ class SentenceModel(nn.Module):
 
     def __init__(
         self,
-        vocabulary_size: int,
-        padding_idx: t.Optional[int] = None,
-        embedding_dim: t.Optional[int] = None,
-        embedding_sparse: t.Optional[bool] = None,
-        gru_hidden_size: t.Optional[int] = None,
-        sentence_dim: t.Optional[int] = None,
+        embedding: nn.Embedding,
+        gru_hidden_size: int,
+        sentence_dim: int,
     ):
         """Take hyper parameters.
 
-        `vocabulary_size` should count the padding indice.
+        `vocabulary_size` should count the padding indice.  Use
+        `SentenceModelFactory` instead of calling this constructor.
 
         """
         super(SentenceModel, self).__init__()
-        self.padding_idx = get_default(padding_idx, 0)
-        embedding_dim = get_default(embedding_dim, 200)
-        self.gru_hidden_size = get_default(gru_hidden_size, 50)
-        self.sentence_dim = get_default(sentence_dim, 100)
-        if embedding_sparse is None:
-            embedding_sparse = True
-        self.embedding = nn.Embedding(
-            num_embeddings=vocabulary_size,
-            embedding_dim=embedding_dim,
-            padding_idx=self.padding_idx,
-            sparse=embedding_sparse,
-        )
+        self._embedding = embedding
         # https://pytorch.org/docs/stable/generated/torch.nn.GRU.html#gru
-        self.gru = nn.GRU(
-            input_size=embedding_dim,
-            hidden_size=self.gru_hidden_size,
+        self._gru = nn.GRU(
+            input_size=self._embedding.embedding_dim,
+            hidden_size=gru_hidden_size,
             bidirectional=True,
         )
-        self.attention_model = a.AttentionModel(
-            self.gru_hidden_size * 2, self.sentence_dim
+        self._attention_model = a.AttentionModel(
+            gru_hidden_size * 2, sentence_dim
         )
+        self.gru_hidden_size = gru_hidden_size
+        self.sentence_dim = sentence_dim
 
     def forward(
         self, x: list[torch.Tensor]
@@ -66,21 +55,21 @@ class SentenceModel(nn.Module):
         # x.shape is (longest length, batch size)
         x = self._pad_sequence(x)
         # x.shape is (longest length, batch size, embedding dim)
-        x: torch.Tensor = self.embedding(x)
+        x: torch.Tensor = self._embedding(x)
         x: r.PackedSequence = self._pack_embeddings(x, lengths)
-        x: torch.Tensor = self.gru(x)[0]
+        x: torch.Tensor = self._gru(x)[0]
         # Linear cannot accept any packed sequences.
         x, _ = r.pad_packed_sequence(x)
-        return self.attention_model(x)
+        return self._attention_model(x)
 
     def sparse_dense_parameters(
         self,
     ) -> t.Tuple[list[nn.parameter.Parameter], list[nn.parameter.Parameter]]:
         """Return the parameters for sparse and dense parameters."""
-        if self.embedding.sparse:
-            sparse = list(self.embedding.parameters())[0]
+        if self._embedding.sparse:
+            sparse = list(self._embedding.parameters())[0]
             return [sparse], [p for p in self.parameters() if p is not sparse]
-        return [], list(self.embedding.parameters())
+        return [], list(self._embedding.parameters())
 
     def _get_lengths(self, x: list[torch.Tensor]) -> list[int]:
         """Get the lengths of each item."""
@@ -88,7 +77,9 @@ class SentenceModel(nn.Module):
 
     def _pad_sequence(self, x: list[torch.Tensor]) -> torch.Tensor:
         """Pad a list of variable neght tensors with `self.padding_idx`."""
-        return r.pad_sequence(x, padding_value=self.padding_idx).to(torch.int)
+        return r.pad_sequence(x, padding_value=self._embedding.padding_idx).to(
+            torch.int
+        )
 
     def _pack_embeddings(
         self, x: torch.Tensor, lengths: list[int]
@@ -100,6 +91,67 @@ class SentenceModel(nn.Module):
 
         """
         return r.pack_padded_sequence(x, lengths, enforce_sorted=False)
+
+
+class SentenceModelFactory:
+    """Create `SentenceModel`."""
+
+    def __init__(self):
+        """No parameters."""
+
+    def create(
+        self,
+        vocabulary_size: int,
+        padding_idx: t.Optional[int] = None,
+        embedding_dim: t.Optional[int] = None,
+        embedding_sparse: t.Optional[bool] = None,
+        gru_hidden_size: t.Optional[int] = None,
+        sentence_dim: t.Optional[int] = None,
+    ) -> SentenceModel:
+        """Take hyper parameters."""
+        return self._create(
+            embedding=nn.Embedding(
+                num_embeddings=vocabulary_size,
+                embedding_dim=get_default(embedding_dim, 200),
+                padding_idx=get_default(padding_idx, 0),
+                sparse=get_default(embedding_sparse, True),
+            ),
+            gru_hidden_size=gru_hidden_size,
+            sentence_dim=sentence_dim,
+        )
+
+    def use_pretrained(
+        self,
+        embeddings: torch.Tensor,
+        freeze: t.Optional[bool] = None,
+        padding_idx: t.Optional[int] = None,
+        sparse: t.Optional[int] = None,
+        gru_hidden_size: t.Optional[int] = None,
+        sentence_dim: t.Optional[int] = None,
+    ) -> SentenceModel:
+        """Use a pretrained word embedding."""
+        return self._create(
+            embedding=nn.Embedding.from_pretrained(
+                embeddings,
+                get_default(freeze, True),
+                padding_idx=get_default(padding_idx, 0),
+                sparse=get_default(sparse, True),
+            ),
+            gru_hidden_size=gru_hidden_size,
+            sentence_dim=sentence_dim,
+        )
+
+    def _create(
+        self,
+        embedding: nn.Embedding,
+        gru_hidden_size: t.Optional[int] = None,
+        sentence_dim: t.Optional[int] = None,
+    ):
+        return SentenceModel(
+            embedding=embedding,
+            gru_hidden_size=get_default(gru_hidden_size, 50),
+            sentence_dim=get_default(sentence_dim, 100),
+        )
 
 
 class SentenceClassifier(nn.Module):
@@ -121,7 +173,7 @@ class SentenceClassifier(nn.Module):
 
         """
         super(SentenceClassifier, self).__init__()
-        self.han: SentenceModel = SentenceModel(
+        self.han: SentenceModel = SentenceModelFactory().create(
             vocabulary_size=vocabulary_size,
             padding_idx=padding_idx,
             embedding_dim=embedding_dim,
