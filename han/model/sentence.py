@@ -77,8 +77,10 @@ class SentenceModel(nn.Module):
         self,
     ) -> t.Tuple[list[nn.parameter.Parameter], list[nn.parameter.Parameter]]:
         """Return the parameters for sparse and dense parameters."""
-        sparse = list(self.embedding.parameters())[0]
-        return [sparse], [p for p in self.parameters() if p is not sparse]
+        if self.embedding.sparse:
+            sparse = list(self.embedding.parameters())[0]
+            return [sparse], [p for p in self.parameters() if p is not sparse]
+        return [], list(self.embedding.parameters())
 
     def _get_lengths(self, x: list[torch.Tensor]) -> list[int]:
         """Get the lengths of each item."""
@@ -108,8 +110,8 @@ class SentenceClassifier(nn.Module):
         num_of_classes: int,
         vocabulary_size: int,
         padding_idx=None,
-        embedding_sparse=None,
         embedding_dim=None,
+        embedding_sparse=None,
         gru_hidden_size=None,
         sentence_dim=None,
     ):
@@ -152,7 +154,9 @@ class SentenceClassifier(nn.Module):
 
         """
         sparse = self.han.sparse_dense_parameters()[0]
-        return sparse, [p for p in self.parameters() if p is not sparse[0]]
+        return sparse, [
+            p for p in self.parameters() if not [s for s in sparse if s is p]
+        ]
 
 
 def get_default(v, default):

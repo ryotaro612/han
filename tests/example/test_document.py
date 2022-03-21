@@ -8,8 +8,19 @@ class TrainTestCase(unittest.TestCase):
         self.encoder_file = "/tmp/han_document_encoder.pth"
         self.model_file = "/tmp/han_document.pth"
 
-    def test(self):
+    def test_sparse(self):
         d.train(self.encoder_file, self.model_file, 300, 100)
+        self.assertTrue(os.path.exists(self.encoder_file))
+        self.assertTrue(os.path.exists(self.model_file))
+
+    def test_dense(self):
+        d.train(
+            self.encoder_file,
+            self.model_file,
+            train_num=300,
+            test_num=100,
+            embedding_sparse=False,
+        )
         self.assertTrue(os.path.exists(self.encoder_file))
         self.assertTrue(os.path.exists(self.model_file))
 

@@ -1,12 +1,7 @@
 import unittest
 import torch
-import torch.nn as nn
 import torch.testing as te
-import torch.utils.data as da
-import torchtext.vocab as vo
 import han.model.sentence as m
-import tests.marker as marker
-import han.example.ag_news as ag
 
 
 class SetenceModelTestCase(unittest.TestCase):
@@ -70,3 +65,10 @@ class SentenceClassifierTestCase(unittest.TestCase):
             te.assert_close(
                 torch.sum(res[1, :]), torch.tensor(1).to(torch.float)
             )
+
+    def test_sparse_dense_parameters(self):
+
+        sut = m.SentenceClassifier(4, 30, embedding_sparse=False)
+        sparse, dense = sut.sparse_dense_parameters()
+        self.assertEqual(sparse, [])
+        self.assertEqual(len(dense), len(list(sut.parameters())))

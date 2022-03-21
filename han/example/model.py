@@ -26,7 +26,9 @@ class TrainProtocol(t.Protocol):
         """Create a `collate_fn` that will be passed to `DataLoader`."""
 
     def create_model(
-        self, num_classes: int, vocabulary_size: int
+        self,
+        num_classes: int,
+        vocabulary_size: int,
     ) -> nn.Module:
         """Create a model."""
 
@@ -61,7 +63,8 @@ class AgNewsTrainer:
             model = torch.load(model_path)
         else:
             model = self._train_protocol.create_model(
-                num_classes, encoder.get_vocabulary_size()
+                num_classes,
+                encoder.get_vocabulary_size(),
             )
         model.to(self._device).train()
         loss_fn = nn.CrossEntropyLoss().to(self._device)
@@ -143,22 +146,26 @@ class AgNewsTrainer:
 class _CompositeOptimizer:
     def __init__(
         self,
-        sparse_params: torch.nn.Parameter,
-        dense_params: torch.nn.Parameter,
+        sparse_params: list[torch.nn.Parameter],
+        dense_params: list[torch.nn.Parameter],
     ):
-        self._sparse_optimizer = torch.optim.SparseAdam(sparse_params)
-        self._dense_optimizer = torch.optim.Adam(dense_params)
+        self._optimizers = []
+        if sparse_params:
+            self._optimizers.append(torch.optim.SparseAdam(sparse_params))
+
+        if dense_params:
+            self._optimizers.append(torch.optim.Adam(dense_params))
 
     def get_optimizers(self) -> list[torch.optim.Optimizer]:
-        return [self._sparse_optimizer, self._dense_optimizer]
+        return self._optimizers
 
     def zero_grad(self):
-        self._sparse_optimizer.zero_grad()
-        self._dense_optimizer.zero_grad()
+        for optimizer in self._optimizers:
+            optimizer.zero_grad()
 
     def step(self):
-        self._sparse_optimizer.step()
-        self._dense_optimizer.step()
+        for optimizer in self._optimizers:
+            optimizer.step()
 
 
 class _CompositeScheduler:

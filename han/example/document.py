@@ -13,10 +13,11 @@ def train(
     model_path: str,
     train_num: t.Optional[int] = None,
     test_num: t.Optional[int] = None,
+    embedding_sparse: t.Optional[bool] = None,
 ):
     """Fit a `DocumentClassifier` on AG News."""
     m.AgNewsTrainer(
-        _DocumentTrainImpl(),
+        _DocumentTrainImpl(embedding_sparse=embedding_sparse),
         m.select_device(),
         train_num=train_num,
         test_num=test_num,
@@ -25,6 +26,10 @@ def train(
 
 class _DocumentTrainImpl:
     """Implement `TrainProtocol`."""
+
+    def __init__(self, embedding_sparse: t.Optional[bool] = None):
+        """Take hyperperameters."""
+        self._embedding_sparse = embedding_sparse
 
     def create_encoder(
         self, vocabulary: v.Vocab, tokenizer: t.Callable[[str], list[str]]
