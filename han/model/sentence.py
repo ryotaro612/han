@@ -159,29 +159,20 @@ class SentenceClassifier(nn.Module):
 
     def __init__(
         self,
+        sentence_model: SentenceModel,
         num_of_classes: int,
-        vocabulary_size: int,
-        padding_idx=None,
-        embedding_dim=None,
-        embedding_sparse=None,
-        gru_hidden_size=None,
-        sentence_dim=None,
     ):
         """`num_of_classes` is the number of the classes.
 
-        It also takes the parameters that `SentenceModel` accepts.
+        It also takes `SentenceModel`. Note that use
+        `SentenceClassifierFactory`.
 
         """
         super(SentenceClassifier, self).__init__()
-        self.han: SentenceModel = SentenceModelFactory().create(
-            vocabulary_size=vocabulary_size,
-            padding_idx=padding_idx,
-            embedding_dim=embedding_dim,
-            embedding_sparse=embedding_sparse,
-            gru_hidden_size=gru_hidden_size,
-            sentence_dim=sentence_dim,
+        self._sentence_model = sentence_model
+        self._linear = nn.Linear(
+            self._sentence_model.sentence_dim, num_of_classes
         )
-        self.linear = nn.Linear(self.han.sentence_dim, num_of_classes)
 
     def forward(self, x: list[torch.Tensor]) -> torch.Tensor:
         """Calculate sentence vectors, and attentions.
@@ -190,8 +181,8 @@ class SentenceClassifier(nn.Module):
         A sentence is a tensor that each word index.
 
         """
-        x, alpha = self.han(x)
-        x = self.linear(x)
+        x, alpha = self._sentence_model(x)
+        x = self._linear(x)
         if self.training:
             return x, alpha
         else:
@@ -205,10 +196,65 @@ class SentenceClassifier(nn.Module):
         The first one for sparse, the second is for dense.
 
         """
-        sparse = self.han.sparse_dense_parameters()[0]
+        sparse = self._sentence_model.sparse_dense_parameters()[0]
         return sparse, [
             p for p in self.parameters() if not [s for s in sparse if s is p]
         ]
+
+
+class SentenceClassifierFactory:
+    """Create `SentenceClassifier`."""
+
+    def __init__(self):
+        """Take no parameters."""
+        self._factory = SentenceModelFactory()
+
+    def create(
+        self,
+        num_classes: int,
+        vocabulary_size: int,
+        padding_idx=None,
+        embedding_dim=None,
+        embedding_sparse=None,
+        gru_hidden_size=None,
+        sentence_dim=None,
+    ) -> SentenceClassifier:
+        """Create a classifier."""
+        sentence_model: SentenceModel = self._factory.create(
+            vocabulary_size=vocabulary_size,
+            padding_idx=padding_idx,
+            embedding_dim=embedding_dim,
+            embedding_sparse=embedding_sparse,
+            gru_hidden_size=gru_hidden_size,
+            sentence_dim=sentence_dim,
+        )
+        return self._create(sentence_model, num_classes=num_classes)
+
+    def use_pretrained(
+        self,
+        num_classes: int,
+        embeddings: torch.Tensor,
+        freeze: t.Optional[bool] = None,
+        padding_idx: t.Optional[int] = None,
+        sparse: t.Optional[int] = None,
+        gru_hidden_size: t.Optional[int] = None,
+        sentence_dim: t.Optional[int] = None,
+    ) -> SentenceClassifier:
+        """Use pretrained embeddings."""
+        return self._create(
+            sentence_model=self._factory.use_pretrained(
+                embeddings=embeddings,
+                freeze=freeze,
+                padding_idx=padding_idx,
+                sparse=sparse,
+                gru_hidden_size=gru_hidden_size,
+                sentence_dim=sentence_dim,
+            ),
+            num_classes=num_classes,
+        )
+
+    def _create(self, sentence_model: SentenceModel, num_classes: int):
+        return SentenceClassifier(sentence_model, num_classes)
 
 
 def get_default(v, default):

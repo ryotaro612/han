@@ -48,8 +48,8 @@ class _SentenceTrainImpl:
         vocabulary_size: int,
     ) -> nn.Module:
         """Impl the protocol."""
-        return se.SentenceClassifier(
-            num_of_classes=num_classes,
+        return se.SentenceClassifierFactory().create(
+            num_classes=num_classes,
             vocabulary_size=vocabulary_size,
             embedding_sparse=self._embedding_sparse,
         )

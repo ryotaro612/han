@@ -57,8 +57,7 @@ class SetenceModelTestCase(unittest.TestCase):
 
 class SentenceClassifierTestCase(unittest.TestCase):
     def test_softmax(self):
-        sut = m.SentenceClassifier(4, 30)
-
+        sut = m.SentenceClassifierFactory().create(4, vocabulary_size=30)
         sut.eval()
         with torch.no_grad():
             res = sut([torch.Tensor([1, 2, 3]), torch.Tensor([1])])[0]
@@ -70,8 +69,9 @@ class SentenceClassifierTestCase(unittest.TestCase):
             )
 
     def test_sparse_dense_parameters(self):
-
-        sut = m.SentenceClassifier(4, 30, embedding_sparse=False)
+        sut = m.SentenceClassifierFactory().create(
+            num_classes=4, vocabulary_size=30, embedding_sparse=False
+        )
         sparse, dense = sut.sparse_dense_parameters()
         self.assertEqual(sparse, [])
         self.assertEqual(len(dense), len(list(sut.parameters())))
