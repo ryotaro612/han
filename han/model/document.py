@@ -124,4 +124,4 @@ class DocumentClassifier(nn.Module):
 
         """
         sparse = self.han.sparse_dense_parameters()[0]
-        return sparse, [p for p in self.parameters() if p not in sparse]
+        return sparse, [p for p in self.parameters() if p is not sparse[0]]

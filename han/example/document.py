@@ -8,11 +8,19 @@ from ..model import document as d
 from . import model as m
 
 
-def train(encoder_path: str, model_path: str):
+def train(
+    encoder_path: str,
+    model_path: str,
+    train_num: t.Optional[int] = None,
+    test_num: t.Optional[int] = None,
+):
     """Fit a `DocumentClassifier` on AG News."""
-    m.AgNewsTrainer(_DocumentTrainImpl(), m.select_device(), 3000, 3000).train(
-        encoder_path, model_path
-    )
+    m.AgNewsTrainer(
+        _DocumentTrainImpl(),
+        m.select_device(),
+        train_num=train_num,
+        test_num=test_num,
+    ).train(encoder_path, model_path)
 
 
 class _DocumentTrainImpl:

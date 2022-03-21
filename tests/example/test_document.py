@@ -1,16 +1,15 @@
 import unittest
 import os
+import han.example.document as d
 
-import han.example.sentence as s
 
-
-class TestTrainCase(unittest.TestCase):
+class TrainTestCase(unittest.TestCase):
     def setUp(self):
-        self.encoder_file = "/tmp/han_sentence_encoder.pth"
-        self.model_file = "/tmp/han_sentence.pth"
+        self.encoder_file = "/tmp/han_document_encoder.pth"
+        self.model_file = "/tmp/han_document.pth"
 
     def test(self):
-        s.train(self.encoder_file, self.model_file, 10, 10)
+        d.train(self.encoder_file, self.model_file, 300, 100)
         self.assertTrue(os.path.exists(self.encoder_file))
         self.assertTrue(os.path.exists(self.model_file))
 
