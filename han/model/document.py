@@ -44,8 +44,18 @@ class DocumentModel(nn.Module):
 
     def forward(
         self, x: list[list[torch.Tensor]]
-    ) -> t.Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Take a document index."""
+    ) -> t.Tuple[torch.Tensor, torch.Tensor, torch.Tensor, list[int]]:
+        """Take a document index.
+
+        Return a quadruple. The first item is the document embeddings
+        of `x`. The shape is (num of docs, `self.doc_dim`). The second
+        item is embeddings of the passed documents. The shape is (The
+        max number of sentences in a document, num of documents). The
+        third item is embedding of the sentences. The shape is (the
+        max number of words in a sentence, the num of sentences). The
+        fourth is a list of the number of sentences in each document.
+
+        """
         sentences = [sentence for document in x for sentence in document]
         doc_lens = [len(doc) for doc in x]
 
@@ -72,7 +82,7 @@ class DocumentModel(nn.Module):
 
 
 class DocumentClassifier(nn.Module):
-    """Classification."""
+    """Use `DocumentModel` for document classification."""
 
     def __init__(
         self,
@@ -101,4 +111,6 @@ class DocumentClassifier(nn.Module):
     def forward(self, x: list[list[torch.Tensor]]):
         """Embbed text index into document vectors."""
         x, alpha, word_alpha, doc_lens = self.han(x)
-        return self.linear(x), alpha, word_alpha, doc_lens
+        x = self.linear(x)
+        x = x if self.training else nn.functional.softmax(x, dim=1)
+        return x, alpha, word_alpha, doc_lens
