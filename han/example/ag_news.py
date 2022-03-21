@@ -49,12 +49,15 @@ class AgNewsCollateSentenceFn:
     """`__call__` emits list of tensors."""
 
     def __init__(
-        self, encoder: s.SentenceEncodeProtocol, enforce_sorted: bool
+        self,
+        encoder: s.SentenceEncodeProtocol,
+        enforce_sorted: bool,
+        device=torch.device("cpu"),
     ):
         """Take an encoder."""
         self._encoder = encoder
         self._enforce_sorted = enforce_sorted
-        self._device = torch.device("cpu")
+        self._device = device
 
     def __call__(
         self, batch: list[t.Tuple[int, str]]
@@ -69,19 +72,14 @@ class AgNewsCollateSentenceFn:
             batch = sorted(batch, key=lambda e: len(e[1]), reverse=True)
 
         texts = [
-            self._allocate(text)
+            _allocate(text, self._device)
             for text in self._encoder.forward([text for _, text in batch])
         ]
-        labels = self._allocate(
-            torch.Tensor([label - 1 for label, _ in batch]).to(torch.long)
+        labels = _allocate(
+            torch.Tensor([label - 1 for label, _ in batch]).to(torch.long),
+            self._device,
         )
         return texts, labels
-
-    def _allocate(self, tensor: torch.Tensor) -> torch.Tensor:
-        if tensor.device == self._device:
-            return tensor
-        else:
-            return tensor.to(self._device)
 
     def to(self, device: torch.device) -> "AgNewsCollateSentenceFn":
         """Make `__call__` put retured tensors on `device`."""
@@ -96,9 +94,14 @@ class AgNewsCollateDocumentFn:
 
     """
 
-    def __init__(self, encoder: d.DocumentEncodeProtocol):
+    def __init__(
+        self,
+        encoder: d.DocumentEncodeProtocol,
+        device: torch.device = torch.device("cpu"),
+    ):
         """Take an encoder."""
         self._encoder = encoder
+        self._device = device
 
     def __call__(
         self, batch: list[t.Tuple[int, list[str]]]
@@ -109,16 +112,29 @@ class AgNewsCollateDocumentFn:
         is labels.
 
         """
-        labels: torch.Tensor = torch.Tensor(
-            [item[0] - 1 for item in batch]
-        ).to(torch.long)
-        return self._encoder.forward([text for _, text in batch]), labels
+        labels: torch.Tensor = _allocate(
+            torch.Tensor([item[0] - 1 for item in batch]).to(torch.long),
+            self._device,
+        )
+        encoded: list[list[torch.Tensor]] = self._encoder.forward(
+            [text for _, text in batch]
+        )
+        encoded = [
+            [_allocate(sentence, self._device) for sentence in document]
+            for document in encoded
+        ]
+        return encoded, labels
+
+    def to(self, device: torch.device) -> "AgNewsCollateDocumentFn":
+        """Put tensors on `device`, then return them."""
+        self._device = device
+        return self
 
 
 class AGNewsDatasetFactory:
     """Load and tokenize AG_NEWS."""
 
-    def get_train(self, limit: t.Optional[int]) -> AGNewsDataset:
+    def get_train(self, limit: t.Optional[int] = None) -> AGNewsDataset:
         """Get train data."""
         if limit is None:
             limit = 120000
@@ -129,7 +145,7 @@ class AGNewsDatasetFactory:
         train = list(data.AG_NEWS(split="train"))
         return AGNewsDataset(train[:limit])
 
-    def get_test(self, limit: t.Optional[int]) -> AGNewsDataset:
+    def get_test(self, limit: t.Optional[int] = None) -> AGNewsDataset:
         """Get train data."""
         if limit is None:
             limit = 7600
@@ -149,3 +165,10 @@ def build_ag_news_vocabulary(
 ) -> vo.Vocab:
     """Learn the vocabulary of `agnews`."""
     return v.build_vocabulary((tokenizer(doc) for _, doc in agnews))
+
+
+def _allocate(tensor: torch.Tensor, device: torch.device) -> torch.Tensor:
+    if tensor.device == device:
+        return tensor
+    else:
+        return tensor.to(device)

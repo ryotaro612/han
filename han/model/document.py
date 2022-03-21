@@ -114,3 +114,14 @@ class DocumentClassifier(nn.Module):
         x = self.linear(x)
         x = x if self.training else nn.functional.softmax(x, dim=1)
         return x, alpha, word_alpha, doc_lens
+
+    def sparse_dense_parameters(
+        self,
+    ) -> t.Tuple[list[nn.parameter.Parameter], list[nn.parameter.Parameter]]:
+        """Return the parameters for sparse and dense parameters.
+
+        The first one for sparse, the second is for dense.
+
+        """
+        sparse = self.han.sparse_dense_parameters()[0]
+        return sparse, [p for p in self.parameters() if p not in sparse]

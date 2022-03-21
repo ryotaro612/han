@@ -4,10 +4,15 @@ import torch.nn as nn
 import torchtext.vocab as v
 from ..encode import document as denc
 from ..example import ag_news as ag
+from ..model import document as d
+from . import model as m
 
 
 def train(encoder_path: str, model_path: str):
     """Fit a `DocumentClassifier` on AG News."""
+    m.AgNewsTrainer(_DocumentTrainImpl(), m.select_device(), 3000, 3000).train(
+        encoder_path, model_path
+    )
 
 
 class _DocumentTrainImpl:
@@ -27,7 +32,7 @@ class _DocumentTrainImpl:
         self, num_classes: int, vocabulary_size: int
     ) -> nn.Module:
         """Impl the protocol."""
-        return se.SentenceClassifier(
-            num_of_classes=num_classes,
+        return d.DocumentClassifier(
             vocabulary_size=vocabulary_size,
+            num_of_classes=num_classes,
         )

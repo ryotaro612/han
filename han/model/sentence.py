@@ -151,8 +151,8 @@ class SentenceClassifier(nn.Module):
         The first one for sparse, the second is for dense.
 
         """
-        sparse = list(self.han.embedding.parameters())[0]
-        return [sparse], [p for p in self.parameters() if p is not sparse]
+        sparse = self.han.sparse_dense_parameters()[0]
+        return sparse, [p for p in self.parameters() if p is not sparse[0]]
 
 
 def get_default(v, default):

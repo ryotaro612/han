@@ -11,6 +11,9 @@ class DocumentEncodeProtocol(typing.Protocol):
     def forward(texts: list[str]) -> list[list[torch.Tensor]]:
         """Transform texts to tensors."""
 
+    def get_vocabulary_size(self) -> int:
+        """Return vocabulary size."""
+
 
 class DocumentEncoder:
     """Implement `DocumentEncodeProtocol`."""
@@ -37,3 +40,7 @@ class DocumentEncoder:
                 document.append(torch.Tensor(sentence))
             documents.append(document)
         return documents
+
+    def get_vocabulary_size(self) -> int:
+        """Implement the protocol."""
+        return len(self._vocab)
