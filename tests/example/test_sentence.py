@@ -10,7 +10,13 @@ class TestTrainCase(unittest.TestCase):
         self.model_file = "/tmp/han_sentence.pth"
 
     def test_sparse(self):
-        s.train(self.encoder_file, self.model_file, 10, 10)
+        s.train(
+            self.encoder_file,
+            self.model_file,
+            10,
+            10,
+            device="cpu",
+        )
         self.assertTrue(os.path.exists(self.encoder_file))
         self.assertTrue(os.path.exists(self.model_file))
 
@@ -21,6 +27,7 @@ class TestTrainCase(unittest.TestCase):
             train_num=10,
             test_num=10,
             embedding_sparse=False,
+            device="cpu",
         )
         self.assertTrue(os.path.exists(self.encoder_file))
         self.assertTrue(os.path.exists(self.model_file))

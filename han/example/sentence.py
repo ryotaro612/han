@@ -14,11 +14,12 @@ def train(
     train_num: t.Optional[int] = None,
     test_num: t.Optional[int] = None,
     embedding_sparse: t.Optional[bool] = None,
+    device: t.Optional[str] = None,
 ):
     """Fit a model on AG News."""
     m.AgNewsTrainer(
         _SentenceTrainImpl(embedding_sparse=embedding_sparse),
-        m.select_device(),
+        device=device,
         train_num=train_num,
         test_num=test_num,
     ).train(encoder_path, model_path)

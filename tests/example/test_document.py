@@ -9,7 +9,13 @@ class TrainTestCase(unittest.TestCase):
         self.model_file = "/tmp/han_document.pth"
 
     def test_sparse(self):
-        d.train(self.encoder_file, self.model_file, 300, 100)
+        d.train(
+            self.encoder_file,
+            self.model_file,
+            train_num=100,
+            test_num=50,
+            device="cpu",
+        )
         self.assertTrue(os.path.exists(self.encoder_file))
         self.assertTrue(os.path.exists(self.model_file))
 
@@ -17,9 +23,10 @@ class TrainTestCase(unittest.TestCase):
         d.train(
             self.encoder_file,
             self.model_file,
-            train_num=300,
-            test_num=100,
+            train_num=100,
+            test_num=50,
             embedding_sparse=False,
+            device="cpu",
         )
         self.assertTrue(os.path.exists(self.encoder_file))
         self.assertTrue(os.path.exists(self.model_file))
