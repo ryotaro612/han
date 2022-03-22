@@ -6,8 +6,7 @@ import han.model.document as d
 
 class DocumentModelTestCase(unittest.TestCase):
     def test_forward(self):
-
-        sut = d.DocumentModel(10)
+        sut = d.DocumentModelFactory().create(10)
         x, sentence_alpha, word_alpha, doc_lens = sut(
             [
                 [torch.Tensor([2])],
