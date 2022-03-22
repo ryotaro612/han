@@ -141,30 +141,13 @@ class DocumentClassifier(nn.Module):
 
     def __init__(
         self,
-        vocabulary_size: int,
-        num_of_classes: int,
-        padding_idx=None,
-        embedding_dim=None,
-        embedding_sparse=None,
-        sentence_gru_hidden_size=None,
-        sentence_dim=None,
-        doc_gru_hidden_size=None,
-        doc_dim=None,
+        document_model: DocumentModel,
+        num_classes: int,
     ):
         """Take hyper parameters."""
         super(DocumentClassifier, self).__init__()
-
-        self._document_model = DocumentModelFactory().create(
-            vocabulary_size=vocabulary_size,
-            padding_idx=padding_idx,
-            embedding_dim=embedding_dim,
-            embedding_sparse=embedding_sparse,
-            sentence_gru_hidden_size=sentence_gru_hidden_size,
-            sentence_dim=sentence_dim,
-            doc_gru_hidden_size=doc_gru_hidden_size,
-            doc_dim=doc_dim,
-        )
-        self._linear = nn.Linear(self._document_model.doc_dim, num_of_classes)
+        self._document_model = document_model
+        self._linear = nn.Linear(self._document_model.doc_dim, num_classes)
 
     def forward(self, x: list[list[torch.Tensor]]):
         """Embbed text index into document vectors."""
@@ -183,3 +166,65 @@ class DocumentClassifier(nn.Module):
         """
         sparse = self._document_model.sparse_dense_parameters()[0]
         return sparse, [p for p in self.parameters() if p is not sparse[0]]
+
+
+class DocumentClassifierFactory:
+    """Create `DocumentClassifier`."""
+
+    def __init__(self):
+        """Take no parameters."""
+        self._factory = DocumentModelFactory()
+
+    def create(
+        self,
+        vocabulary_size: int,
+        num_classes: int,
+        padding_idx=None,
+        embedding_dim=None,
+        embedding_sparse=None,
+        sentence_gru_hidden_size=None,
+        sentence_dim=None,
+        doc_gru_hidden_size=None,
+        doc_dim=None,
+    ):
+        """Create `DocumentClassifier`."""
+        return DocumentClassifier(
+            document_model=self._factory.create(
+                vocabulary_size=vocabulary_size,
+                padding_idx=padding_idx,
+                embedding_dim=embedding_dim,
+                embedding_sparse=embedding_sparse,
+                sentence_gru_hidden_size=sentence_gru_hidden_size,
+                sentence_dim=sentence_dim,
+                doc_gru_hidden_size=doc_gru_hidden_size,
+                doc_dim=doc_dim,
+            ),
+            num_classes=num_classes,
+        )
+
+    def use_pretrained(
+        self,
+        num_classes: int,
+        embeddings: torch.Tensor,
+        freeze: t.Optional[bool] = None,
+        padding_idx: t.Optional[int] = None,
+        embedding_sparse: t.Optional[int] = None,
+        gru_hidden_size: t.Optional[int] = None,
+        sentence_dim: t.Optional[int] = None,
+        doc_gru_hidden_size: t.Optional[int] = None,
+        doc_dim=None,
+    ):
+        """Use pretrained embedding."""
+        return DocumentClassifier(
+            self._factory.use_pretrained(
+                embeddings=embeddings,
+                freeze=freeze,
+                padding_idx=padding_idx,
+                embedding_sparse=embedding_sparse,
+                gru_hidden_size=gru_hidden_size,
+                sentence_dim=sentence_dim,
+                doc_gru_hidden_size=doc_gru_hidden_size,
+                doc_dim=doc_dim,
+            ),
+            num_classes,
+        )

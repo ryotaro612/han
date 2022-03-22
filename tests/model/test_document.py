@@ -31,7 +31,7 @@ class DocumentModelTestCase(unittest.TestCase):
 
 class DocumentClassifierTestCase(unittest.TestCase):
     def test_eval(self):
-        sut = d.DocumentClassifier(10, 3)
+        sut = d.DocumentClassifierFactory().create(10, 3)
         sut.eval()
         with torch.no_grad():
             res = sut(

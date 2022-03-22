@@ -46,7 +46,6 @@ class _DocumentTrainImpl:
         self, num_classes: int, vocabulary_size: int
     ) -> nn.Module:
         """Impl the protocol."""
-        return d.DocumentClassifier(
-            vocabulary_size=vocabulary_size,
-            num_of_classes=num_classes,
+        return d.DocumentClassifierFactory().create(
+            vocabulary_size=vocabulary_size, num_classes=num_classes
         )
