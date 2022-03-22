@@ -5,3 +5,4 @@ han.egg-info
 venv
 __pycache__
 .vector_cache
+dist
