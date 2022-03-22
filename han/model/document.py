@@ -64,8 +64,9 @@ class DocumentModel(nn.Module):
         sparse: list[
             nn.Parameter
         ] = self._sentence_model.sparse_dense_parameters()[0]
-
-        return sparse, [p for p in self.parameters() if p is not sparse[0]]
+        return sparse, [
+            p for p in self.parameters() if not [s for s in sparse if s is p]
+        ]
 
 
 class DocumentModelFactory:
@@ -165,7 +166,9 @@ class DocumentClassifier(nn.Module):
 
         """
         sparse = self._document_model.sparse_dense_parameters()[0]
-        return sparse, [p for p in self.parameters() if p is not sparse[0]]
+        return sparse, [
+            p for p in self.parameters() if not [s for s in sparse if s is p]
+        ]
 
 
 class DocumentClassifierFactory:

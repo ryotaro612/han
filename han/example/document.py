@@ -5,6 +5,7 @@ import torchtext.vocab as v
 from ..encode import document as denc
 from ..example import ag_news as ag
 from ..model import document as d
+from .. import vocabulary as hv
 from . import model as m
 
 
@@ -15,10 +16,13 @@ def train(
     test_num: t.Optional[int] = None,
     embedding_sparse: t.Optional[bool] = None,
     device: t.Optional[str] = None,
+    pre_trained: t.Optional[v.Vectors] = None,
 ):
     """Fit a `DocumentClassifier` on AG News."""
     m.AgNewsTrainer(
-        _DocumentTrainImpl(embedding_sparse=embedding_sparse),
+        _DocumentTrainImpl(
+            embedding_sparse=embedding_sparse, pre_trained=pre_trained
+        ),
         device=device,
         train_num=train_num,
         test_num=test_num,
@@ -28,15 +32,25 @@ def train(
 class _DocumentTrainImpl:
     """Implement `TrainProtocol`."""
 
-    def __init__(self, embedding_sparse: t.Optional[bool] = None):
+    def __init__(
+        self,
+        embedding_sparse: t.Optional[bool] = None,
+        pre_trained: t.Optional[v.Vectors] = None,
+    ):
         """Take hyperperameters."""
         self._embedding_sparse = embedding_sparse
+        if pre_trained:
+            self._vocabulary, self._weights = hv.create_vocab(pre_trained)
 
     def create_encoder(
         self, vocabulary: v.Vocab, tokenizer: t.Callable[[str], list[str]]
     ) -> denc.DocumentEncodeProtocol:
         """Implement the protocol."""
-        return denc.DocumentEncoder(vocabulary)
+        return denc.DocumentEncoder(
+            vocab=self._vocabulary
+            if hasattr(self, "_vocabulary")
+            else vocabulary
+        )
 
     def create_collate_fn(self, encoder) -> ag.AgNewsCollateSentenceFn:
         """Impl the protocol."""
@@ -46,6 +60,16 @@ class _DocumentTrainImpl:
         self, num_classes: int, vocabulary_size: int
     ) -> nn.Module:
         """Impl the protocol."""
-        return d.DocumentClassifierFactory().create(
-            vocabulary_size=vocabulary_size, num_classes=num_classes
-        )
+        factory = d.DocumentClassifierFactory()
+        if hasattr(self, "_weights"):
+            return factory.use_pretrained(
+                num_classes=num_classes,
+                embeddings=self._weights,
+                embedding_sparse=self._embedding_sparse,
+            )
+        else:
+            return factory.create(
+                num_classes=num_classes,
+                vocabulary_size=vocabulary_size,
+                embedding_sparse=self._embedding_sparse,
+            )

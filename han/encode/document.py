@@ -1,7 +1,7 @@
 """Tokenize text, and encode words to integers."""
 import typing
 import torch
-import torchtext.vocab as v
+from .. import vocabulary as v
 from .. import token as t
 
 
@@ -18,7 +18,7 @@ class DocumentEncodeProtocol(typing.Protocol):
 class DocumentEncoder:
     """Implement `DocumentEncodeProtocol`."""
 
-    def __init__(self, vocab: v.Vocab):
+    def __init__(self, vocab: v.VocabularyProtocol):
         """`vocab` has vocabulary."""
         self._vocab = vocab
         self._tokenizer = t.Tokenizer()

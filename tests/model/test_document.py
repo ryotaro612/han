@@ -5,6 +5,14 @@ import han.model.document as d
 
 
 class DocumentModelTestCase(unittest.TestCase):
+    def test_sparse_dense_parameters_dense(self):
+        sut = d.DocumentModelFactory().create(
+            vocabulary_size=10, embedding_sparse=False
+        )
+        sparse, dense = sut.sparse_dense_parameters()
+        self.assertEqual(len(sparse), 0)
+        self.assertEqual(dense, list(sut.parameters()))
+
     def test_forward(self):
         sut = d.DocumentModelFactory().create(10)
         x, sentence_alpha, word_alpha, doc_lens = sut(
