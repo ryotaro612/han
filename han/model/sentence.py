@@ -45,8 +45,8 @@ class SentenceModel(nn.Module):
         """Calculate sentence vectors, and attentions.
 
         `x` is a list of index sentences.  Return a tuple of two
-        tensors.  The first one that it transformed x to, and its
-        shape is (num of `x`, `self.output_dim`) The second one
+        tensors.  The first one is the sentence embeddings, and its
+        shape is (num of `x`, `self.sentence_dim`) The second one
         represents attention.  The shape is (the length of the longest
         tensor in `x`, num of `x`).
 
