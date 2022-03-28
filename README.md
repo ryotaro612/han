@@ -12,3 +12,9 @@ You can install [the package](https://pypi.org/project/hierarchical-attention-ne
 
 ## Usage
 
+
+## Test
+You can run tests from the command line.
+
+    pip install -e .[dev]
+	python -m unittest
