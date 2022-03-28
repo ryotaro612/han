@@ -1,5 +1,5 @@
 .python-version
-han.egg-info
+*.egg-info
 *~
 \#*
 venv
