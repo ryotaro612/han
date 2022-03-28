@@ -10,8 +10,20 @@ You can install [the package](https://pypi.org/project/hierarchical-attention-ne
     pip install hierarchical-attention-networks
 
 
-## Usage
+## Requirements
 
+You can see the requirements in `setup.cfg`.
+
+## Usage
+This package provides two neural networks.
+The first one is `SentenceModel` in `han.model.sentence`.
+It implements a word encoder and a word attention.
+The second one is `DocumentModel` in `han.model.document`.
+It contains `SentenceModel`, and implements sentence attention and sentence encoder.
+
+
+
+`han.model.sentence` expose `SentenceModel`.
 
 ## Test
 You can run tests from the command line.
